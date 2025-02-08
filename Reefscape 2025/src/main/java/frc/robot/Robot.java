@@ -5,7 +5,9 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.EncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -16,10 +18,7 @@ import edu.wpi.first.wpilibj.Timer;
 
 import edu.wpi.first.wpilibj.XboxController;
 
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 
-import edu.wpi.first.math.controller.PIDController;
 
 
 // If the name of this public class is changed, remember to change as well in the Main.java file
@@ -44,26 +43,24 @@ public class Robot extends TimedRobot {
   private final SparkMaxConfig driveConfig = new SparkMaxConfig(); //creating setups for driving and roller 
   private final SparkMaxConfig rollerConfig = new SparkMaxConfig();
 
-  private final Timer timer1 = new Timer(); //new timer
+  final Timer timer1 = new Timer(); //new timer
 
-  private final double ROLLER_STRENGTH = 0.25; //variable for roller strength
-  private double driveSpeed = 0.5; //variable for drive speed
-  private Integer speedRate;
-  private boolean opposite = false;
-  private double setpoint = 0;
+  final double ROLLER_STRENGTH = 0.25; //variable for roller strength
+  double driveSpeed = 0.5; //variable for drive speed
+  Integer speedRate;
+  boolean opposite = false;
+  double setpoint = 0;
   
   private final XboxController driverGamepad = new XboxController(0);
   private final XboxController gamepadOperator = new XboxController(1);
 
-  private Encoder leftEncoder = new Encoder(0, 10, true, EncodingType.k4X); //unsure about channels, type and direction
-  private Encoder rightEncoder = new Encoder(0, 11, true, EncodingType.k4X); //unsure about channels, type and direction
-  // convert known # of ticks into rotations, then multiply gear ratio, then convert into inches from the diameter of the wheels, then convert into feet
-  // FEET = CONSTANT * TICKS
-  private final double encoderConstant = (1.0 / 128) * ((6 * Math.PI) / 1) / 12;
-  private final double leftEncoderPos = leftEncoder.get() * encoderConstant;
-  private final double rightEncoderPos = rightEncoder.get() * encoderConstant;
+  private RelativeEncoder leftEncoder = leftLeader.getEncoder();
+  private RelativeEncoder rightEncoder = rightLeader.getEncoder();
 
-  private final double kP = 0;  //change from 0.05, 0.5, 1
+  double rightEncoderPos = rightEncoder.getPosition();
+  double leftEncoderPos = leftEncoder.getPosition();
+
+  private final double kP = 0; //change from 0.05, 0.5, 1
   private final double error = setpoint - ((leftEncoderPos + rightEncoderPos) / 2); //setpoint minus average of encoders from both sides
   private final double outputSpeed = kP * error;
 
@@ -98,15 +95,17 @@ public class Robot extends TimedRobot {
     rollerMotor.configure(rollerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     timer1.start(); //starts timer
+
+    EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(kDefaultPeriod);
+    driveConfig.encoder.apply(encoderConfig);
   }
 
 
 
   @Override
   public void robotPeriodic() {
-    SmartDashboard.putNumber("Left Side Encoder Value", leftEncoderPos * outputSpeed);
-    SmartDashboard.putNumber("Right Side Encoder Value", rightEncoderPos * outputSpeed);
-
+    SmartDashboard.putNumber("Left Encoder Value", leftEncoder.getPosition());
+    SmartDashboard.putNumber("Right Encoder Value", rightEncoder.getPosition());
   }
 
 
@@ -118,8 +117,8 @@ public class Robot extends TimedRobot {
     System.out.println("Auto selected: " + m_autoSelected);
 
     timer1.restart();
-    leftEncoder.reset();
-    rightEncoder.reset();
+    leftEncoderPos = 0;
+    rightEncoderPos = 0;
 
     speedRate = 0;
     setpoint = 0;
