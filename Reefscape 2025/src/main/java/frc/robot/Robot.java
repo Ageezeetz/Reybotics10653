@@ -1,6 +1,8 @@
 package frc.robot;
 
-//imports
+/*
+ * Imports
+ */
 import edu.wpi.first.wpilibj.TimedRobot; 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -20,7 +22,9 @@ import edu.wpi.first.wpilibj.XboxController;
 
 
 
-
+/*
+ * Main Robot Class
+ */
 // If the name of this public class is changed, remember to change as well in the Main.java file
 public class Robot extends TimedRobot {
   private static final String kDefaultAuto = "Default";
@@ -31,42 +35,44 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  private final SparkMax rollerMotor = new SparkMax(5, MotorType.kBrushless); //creates roller variable
+  final SparkMax rollerMotor = new SparkMax(5, MotorType.kBrushless); //creates roller variable
 
-  private final SparkMax leftLeader = new SparkMax(2, MotorType.kBrushless); //creates sparkmax variables
-  private final SparkMax leftFollower = new SparkMax(3, MotorType.kBrushless);
-  private final SparkMax rightLeader = new SparkMax(1, MotorType.kBrushless);
-  private final SparkMax rightFollower = new SparkMax(4, MotorType.kBrushless);
+  final SparkMax leftLeader = new SparkMax(2, MotorType.kBrushless); //creates sparkmax variables
+  final SparkMax leftFollower = new SparkMax(3, MotorType.kBrushless);
+  final SparkMax rightLeader = new SparkMax(1, MotorType.kBrushless);
+  final SparkMax rightFollower = new SparkMax(4, MotorType.kBrushless);
 
-  private final DifferentialDrive myDrive = new DifferentialDrive(leftLeader, rightLeader); //used for motor calls
+  final DifferentialDrive myDrive = new DifferentialDrive(leftLeader, rightLeader); //used for motor calls
 
-  private final SparkMaxConfig driveConfig = new SparkMaxConfig(); //creating setups for driving and roller 
-  private final SparkMaxConfig rollerConfig = new SparkMaxConfig();
+  final SparkMaxConfig driveConfig = new SparkMaxConfig(); //creating setups for driving and roller 
+  final SparkMaxConfig rollerConfig = new SparkMaxConfig();
 
   final Timer timer1 = new Timer(); //new timer
 
   final double ROLLER_STRENGTH = 0.25; //variable for roller strength
   double driveSpeed = 0.5; //variable for drive speed
-  Integer speedRate;
-  boolean opposite = false;
+  boolean opposite = false; //variable for default robot direction
+  double speedRate = 0;
   double setpoint = 0;
   
-  private final XboxController driverGamepad = new XboxController(0);
-  private final XboxController gamepadOperator = new XboxController(1);
+  final XboxController driverGamepad = new XboxController(0);
+  final XboxController gamepadOperator = new XboxController(1);
 
-  private RelativeEncoder leftEncoder = leftLeader.getEncoder();
-  private RelativeEncoder rightEncoder = rightLeader.getEncoder();
+  RelativeEncoder leftEncoder = leftLeader.getEncoder();
+  RelativeEncoder rightEncoder = rightLeader.getEncoder();
 
   double rightEncoderPos = rightEncoder.getPosition();
   double leftEncoderPos = leftEncoder.getPosition();
 
-  private final double kP = 0; //change from 0.05, 0.5, 1
-  private final double error = setpoint - ((leftEncoderPos + rightEncoderPos) / 2); //setpoint minus average of encoders from both sides
-  private final double outputSpeed = kP * error;
+  final double kP = 0.05; //how much power the robot should be using for every tick? based on error (if more error, more kP; if less error, less kP)
+  final double error = setpoint - ((leftEncoderPos + rightEncoderPos) / 2);
+  final double outputSpeed = kP * error;
 
 
 
-  //startup for all robot code during startup
+  /*
+  * Robot Initialization
+  */
   public Robot() {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("Center and Coral", kCenterCoral);
@@ -104,8 +110,13 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotPeriodic() {
-    SmartDashboard.putNumber("Left Encoder Value", leftEncoder.getPosition());
-    SmartDashboard.putNumber("Right Encoder Value", rightEncoder.getPosition());
+    /*
+     * Prints
+     */
+    SmartDashboard.putNumber("Left Encoder Position", leftEncoderPos);
+    SmartDashboard.putNumber("Right Encoder Position", rightEncoderPos);
+    SmartDashboard.putNumber("Left Encoder Velocty", leftEncoder.getVelocity());
+    SmartDashboard.putNumber("Right Encoder Velocity", rightEncoder.getVelocity());
   }
 
 
@@ -116,20 +127,18 @@ public class Robot extends TimedRobot {
     //m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
 
+
     timer1.restart();
     leftEncoderPos = 0;
     rightEncoderPos = 0;
-
-    speedRate = 0;
-    setpoint = 0;
   }
 
 
 
   @Override
   public void autonomousPeriodic() { //function runs many times during auto period
-    if (driverGamepad.getAButton()) { //if A button is pressed, robot should move forward 10 feet?
-      setpoint = 10;
+    if (driverGamepad.getAButton()) { //if A button is pressed, robot should move forward 10 feet? or just 10 units not sure
+      setpoint = 100;
     }
     else {
       setpoint = 0;
@@ -139,6 +148,9 @@ public class Robot extends TimedRobot {
     rightLeader.set(outputSpeed);
 
 
+    /*
+    * Selections for auto modes \o/
+    */
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
         if (timer1.get() < 1) { //drive forward
@@ -214,15 +226,20 @@ public class Robot extends TimedRobot {
 
 //Called once at beginning of teleop period
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    leftEncoderPos = 0;
+    rightEncoderPos = 0;
+  }
 
 
 
 //Called repeatedly during teleop period
   @Override
   public void teleopPeriodic() {
-    // Boost button
-    if (driverGamepad.getLeftBumperButtonPressed()) {
+    /*
+    * Boost Toggle
+    */
+    if (driverGamepad.getLeftBumperButtonPressed()) { //toggle
       if (speedRate == 1) {
         speedRate--;
       }
@@ -230,16 +247,17 @@ public class Robot extends TimedRobot {
         speedRate++;
       }
     }
-
-    // Robot speed change w/ boost button
-    if (speedRate == 1) {
+    if (speedRate == 1) { //speed change
       driveSpeed = 0.75;
     }
     else {
       driveSpeed = 0.5;
     }
 
-    // Flips robot direction
+
+    /*
+     * Flip Direction Toggle
+     */
     if (driverGamepad.getRightBumperButtonPressed()) {
       if (opposite == false) {
         opposite = true;
@@ -259,7 +277,7 @@ public class Robot extends TimedRobot {
 
     //Uncomment below for arcade style controls
     if (opposite == true) {
-      myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, -driverGamepad.getLeftY()*driveSpeed);  //left = forward/backward, right = turning
+      myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, -driverGamepad.getLeftY()*driveSpeed);
     }
     else {
       myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed);
@@ -267,18 +285,22 @@ public class Robot extends TimedRobot {
 
     //Uncomment below for single joystick controls (left joystick)
     // if (opposite == true) {
-    //   myDrive.arcadeDrive(driverGamepad.getLeftX()*driveSpeed/1.25, -driverGamepad.getLeftY()*driveSpeed); //left = forward/backward/left/right
+    //   myDrive.arcadeDrive(driverGamepad.getLeftX()*driveSpeed/1.25, -driverGamepad.getLeftY()*driveSpeed);
     // }
     // else {
     //   myDrive.arcadeDrive(driverGamepad.getLeftX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed);
     // }
     
 
-    if (gamepadOperator.getPOV() == 180) { //roller contorl on op controller with D-pad 
-      rollerMotor.set(ROLLER_STRENGTH);
+
+    /*
+     * Operator Controls
+     */
+    if (gamepadOperator.getPOV() == 180) { //bottom D-pad button pressed
+      rollerMotor.set(ROLLER_STRENGTH); //roll in
     }
-    else if (gamepadOperator.getPOV() == 0) {
-      rollerMotor.set(-ROLLER_STRENGTH);
+    else if (gamepadOperator.getPOV() == 0) { //top D-pad button pressed
+      rollerMotor.set(-ROLLER_STRENGTH); //roll out
     }
     else {
       rollerMotor.set(0);
@@ -290,35 +312,48 @@ public class Robot extends TimedRobot {
 
 //Called once when the robot is disabled
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    myDrive.tankDrive(0, 0);
+    rollerMotor.set(0);
+  }
 
 
 
 //Called repeatedly when robot is disabled
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+
+  }
 
 
 
   /** This function is called once when test mode is enabled. */
   @Override
-  public void testInit() {}
+  public void testInit() {
+
+  }
 
 
 
   /** This function is called periodically during test mode. */
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+
+  }
 
 
 
   /** This function is called once when the robot is first started up. */
   @Override
-  public void simulationInit() {}
+  public void simulationInit() {
+
+  }
 
 
 
   /** This function is called periodically whilst in simulation. */
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+
+  }
 }
