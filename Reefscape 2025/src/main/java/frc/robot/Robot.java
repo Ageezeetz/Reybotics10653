@@ -104,6 +104,8 @@ public class Robot extends TimedRobot {
 
     EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(kDefaultPeriod);
     driveConfig.encoder.apply(encoderConfig);
+
+    System.out.println("Robot started!");
   }
 
 
@@ -113,10 +115,10 @@ public class Robot extends TimedRobot {
     /*
      * Prints
      */
-    SmartDashboard.putNumber("Left Encoder Position", leftEncoderPos);
-    SmartDashboard.putNumber("Right Encoder Position", rightEncoderPos);
-    SmartDashboard.putNumber("Left Encoder Velocty", leftEncoder.getVelocity());
-    SmartDashboard.putNumber("Right Encoder Velocity", rightEncoder.getVelocity());
+    // SmartDashboard.putNumber("Left Encoder Position", leftEncoderPos);
+    // SmartDashboard.putNumber("Right Encoder Position", rightEncoderPos);
+    // SmartDashboard.putNumber("Left Encoder Velocty", leftEncoder.getVelocity());
+    // SmartDashboard.putNumber("Right Encoder Velocity", rightEncoder.getVelocity());
   }
 
 
@@ -354,6 +356,6 @@ public class Robot extends TimedRobot {
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {
-
+    
   }
 }
