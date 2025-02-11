@@ -63,6 +63,11 @@ public class Robot extends TimedRobot {
 
   double rightEncoderPos = rightEncoder.getPosition();
   double leftEncoderPos = leftEncoder.getPosition();
+  double encoderPositions = (leftEncoderPos + rightEncoderPos) / 2;
+  double rightEncoderVel = rightEncoder.getVelocity();
+  double leftEncoderVel = leftEncoder.getVelocity();
+
+  PIDController controller = new PIDController(0.05, 0, 0);
 
   final double kP = 0.05; //how much power the robot should be using for every tick? based on error (if more error, more kP; if less error, less kP)
   final double error = setpoint - ((leftEncoderPos + rightEncoderPos) / 2);
@@ -102,6 +107,7 @@ public class Robot extends TimedRobot {
 
     timer1.start(); //starts timer
 
+    // 2 * PI * wheel radius in centimeters / gearing
     EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(kDefaultPeriod);
     driveConfig.encoder.apply(encoderConfig);
 
@@ -129,48 +135,49 @@ public class Robot extends TimedRobot {
     //m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
 
-
     timer1.restart();
-    leftEncoderPos = 0;
-    rightEncoderPos = 0;
+
+    double step = 0; //used to determine which step of auto robot is on
+    leftEncoderPos.set(0);
+    rightEncoderPos.set(0);
+    encoderPositions.set(0);
+
+    double atDestination = controller.atSetpoint();
+    double distance = controller.setpoint;
   }
 
 
 
   @Override
   public void autonomousPeriodic() { //function runs many times during auto period
-    if (driverGamepad.getAButton()) { //if A button is pressed, robot should move forward 10 feet? or just 10 units not sure
-      setpoint = 100;
-    }
-    else {
-      setpoint = 0;
-    }
- 
-    leftLeader.set(outputSpeed);
-    rightLeader.set(outputSpeed);
-
-
     /*
     * Selections for auto modes \o/
     */
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
-        if (timer1.get() < 1) { //drive forward
-          myDrive.tankDrive(0.5, -0.5);
+        step++;
+        if (atDestination() && distance != 0) {
+          step++;
         }
-        else if (timer1.get() < 1.5) {
-          myDrive.tankDrive(0, 0);
+        if (step == 1) {
+          distance = 1; //change to distance from starting line to reef
+          while (!atDestination()) {
+            double output = controller.calculate(encoderPositions, SETPOINT);
+            myDrive.arcadeDrive(output, 0);
+          }
         }
-        else if (timer1.get() < 2) { //deposit coral
-          myDrive.tankDrive(0, 0);
-          rollerMotor.set(-ROLLER_STRENGTH);
+        else if (step == 2) {
+          rollerMotor.set(-ROLLER_STRENGTH); //deposit
+          sleep(500);
+          step++;
         }
-        else { //stop all
-          myDrive.tankDrive(0, 0);
+        else {
+          myDrive.arcadeDrive(0, 0); //stop
           rollerMotor.set(0);
         }
         break;
       
+
       case kRightCoral: //score coral when right side of starting line
         if (timer1.get() < 1.5) { //drive forward
           myDrive.tankDrive(0.5, -0.5);
@@ -229,8 +236,9 @@ public class Robot extends TimedRobot {
 //Called once at beginning of teleop period
   @Override
   public void teleopInit() {
-    leftEncoderPos = 0;
-    rightEncoderPos = 0;
+    leftEncoderPos.set(0);
+    rightEncoderPos.set(0);
+    encoderPositions.set(0);
   }
 
 
