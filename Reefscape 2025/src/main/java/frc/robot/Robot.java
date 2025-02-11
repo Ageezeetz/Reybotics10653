@@ -50,6 +50,7 @@ public class Robot extends TimedRobot {
   final SparkMaxConfig rollerConfig = new SparkMaxConfig();
 
   final Timer timer1 = new Timer(); //new timer
+  final Timer sleepTime = new Timer();
 
   final double ROLLER_STRENGTH = 0.25; //variable for roller strength
   double driveSpeed = 0.5; //variable for drive speed
@@ -111,8 +112,8 @@ public class Robot extends TimedRobot {
 
     timer1.start(); //starts timer
 
-    // 2 * PI * wheel radius in centimeters / gearing
-    EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(kDefaultPeriod);
+    // 2 * PI * wheel radius in conversion unit / gearing
+    EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(2 * Math.PI * 3 / 8.45); //conversion factor now in inches?
     driveConfig.encoder.apply(encoderConfig);
 
     System.out.println("Robot started!");
@@ -140,6 +141,7 @@ public class Robot extends TimedRobot {
     System.out.println("Auto selected: " + m_autoSelected);
 
     timer1.restart();
+    sleepTime.restart();
 
     leftEncoderPos = 0;
     rightEncoderPos = 0;
@@ -157,10 +159,9 @@ public class Robot extends TimedRobot {
       case kCenterCoral: //score coral when center of starting line
       default:
         step++;
-        if (controller.atSetpoint() && controller.getSetpoint() != 0) {
+        if (controller.atSetpoint() && controller.getSetpoint() != 0) { //if at location and the location is not set to 0
           step++;
         }
-
         if (step == 1) {
           controller.setSetpoint(1000); //change to distance from starting line to reef
           while (!controller.atSetpoint()) {
@@ -169,8 +170,11 @@ public class Robot extends TimedRobot {
           }
         }
         else if (step == 2) {
+          sleepTime.start();
           rollerMotor.set(-ROLLER_STRENGTH); //deposit
-          step++; //might need something to slow this down because roller is only activated for 20ms (not enough to roll coral)
+          if (sleepTime.get() > 500) {
+            step++;
+          }
         }
         else {
           myDrive.arcadeDrive(0, 0); //stop
