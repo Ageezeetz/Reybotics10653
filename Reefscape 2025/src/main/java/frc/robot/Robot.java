@@ -155,15 +155,16 @@ public class Robot extends TimedRobot {
     */
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
+      default:
         step++;
         if (controller.atSetpoint() && controller.getSetpoint() != 0) {
           step++;
         }
 
         if (step == 1) {
-          controller.setSetpoint(1); //change to distance from starting line to reef
+          controller.setSetpoint(1000); //change to distance from starting line to reef
           while (!controller.atSetpoint()) {
-            double output = controller.calculate(encoderPositions, 100); //change setpoint depending on destination dist
+            double output = controller.calculate(encoderPositions, controller.getSetpoint()); //change setpoint depending on destination dist
             myDrive.arcadeDrive(output, 0);
           }
         }
@@ -223,11 +224,6 @@ public class Robot extends TimedRobot {
         else { //stop all 
           myDrive.tankDrive(0, 0);
         }
-
-      case kDefaultAuto:
-      default:
-        myDrive.tankDrive(0.1, 0.1);
-        break;
     }
   }
 
