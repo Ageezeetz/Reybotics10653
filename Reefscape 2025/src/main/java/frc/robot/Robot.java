@@ -20,6 +20,8 @@ import edu.wpi.first.wpilibj.Timer;
 
 import edu.wpi.first.wpilibj.XboxController;
 
+import edu.wpi.first.math.controller.PIDController;
+
 
 
 /*
@@ -72,6 +74,8 @@ public class Robot extends TimedRobot {
   final double kP = 0.05; //how much power the robot should be using for every tick? based on error (if more error, more kP; if less error, less kP)
   final double error = setpoint - ((leftEncoderPos + rightEncoderPos) / 2);
   final double outputSpeed = kP * error;
+
+  double step = 0; //used to determine which step of auto robot is on
 
 
 
@@ -137,14 +141,10 @@ public class Robot extends TimedRobot {
 
     timer1.restart();
 
-    double step = 0; //used to determine which step of auto robot is on
-    leftEncoderPos.set(0);
-    rightEncoderPos.set(0);
-    encoderPositions.set(0);
-
-    double atDestination = controller.atSetpoint();
-    double distance = controller.setpoint;
-  }
+    leftEncoderPos = 0;
+    rightEncoderPos = 0;
+    encoderPositions = 0;
+    }
 
 
 
@@ -156,20 +156,20 @@ public class Robot extends TimedRobot {
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
         step++;
-        if (atDestination() && distance != 0) {
+        if (controller.atSetpoint() && controller.getSetpoint() != 0) {
           step++;
         }
+
         if (step == 1) {
-          distance = 1; //change to distance from starting line to reef
-          while (!atDestination()) {
-            double output = controller.calculate(encoderPositions, SETPOINT);
+          controller.setSetpoint(1); //change to distance from starting line to reef
+          while (!controller.atSetpoint()) {
+            double output = controller.calculate(encoderPositions, 100); //change setpoint depending on destination dist
             myDrive.arcadeDrive(output, 0);
           }
         }
         else if (step == 2) {
           rollerMotor.set(-ROLLER_STRENGTH); //deposit
-          sleep(500);
-          step++;
+          step++; //might need something to slow this down because roller is only activated for 20ms (not enough to roll coral)
         }
         else {
           myDrive.arcadeDrive(0, 0); //stop
@@ -236,9 +236,9 @@ public class Robot extends TimedRobot {
 //Called once at beginning of teleop period
   @Override
   public void teleopInit() {
-    leftEncoderPos.set(0);
-    rightEncoderPos.set(0);
-    encoderPositions.set(0);
+    leftEncoderPos = 0;
+    rightEncoderPos = 0;
+    encoderPositions = 0;
   }
 
 
