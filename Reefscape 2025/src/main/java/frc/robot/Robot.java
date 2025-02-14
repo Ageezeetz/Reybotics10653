@@ -71,6 +71,8 @@ public class Robot extends TimedRobot {
   PIDController controller = new PIDController(0.1, 0, 0);
   double step = 0; //used to determine which step of auto robot is on
 
+  boolean safetyBool = true; //safety switch for watchdog/differential drive error
+
 
 
   /*
@@ -110,6 +112,36 @@ public class Robot extends TimedRobot {
     driveConfig.encoder.apply(encoderConfig);
 
     System.out.println("Robot started!");
+
+    myDrive.setSafetyEnabled(safetyBool);
+  }
+
+
+
+  /*
+   * Functions
+   */
+  private void centerCoralAuto() {
+    step++;
+    if (step == 1) {
+      controller.setSetpoint(10); //sets the destination in INCHES
+      double output = controller.calculate(encoderPositions, controller.getSetpoint()); //change setpoint depending on destination dist
+      myDrive.tankDrive(output, -output);
+      if (controller.atSetpoint()) {
+        step++;
+      }
+    }
+    else if (step == 2) {
+      sleepTime.start();
+      rollerMotor.set(-ROLLER_STRENGTH); //deposit
+      if (sleepTime.get() > 1) {
+        step++;
+      }
+    }
+    else {
+      myDrive.arcadeDrive(0, 0); //stop
+      rollerMotor.set(0);
+    }
   }
 
 
@@ -151,34 +183,15 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousPeriodic() { //function runs many times during auto period
+    myDrive.feed();
     /*
     * Selections for auto modes \o/
     */
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
       default:
-        step++;
-        if (step == 1) {
-          controller.setSetpoint(10); //sets the destination in INCHES
-          double output = controller.calculate(encoderPositions, controller.getSetpoint()); //change setpoint depending on destination dist
-          myDrive.tankDrive(output, -output);
-          if (controller.atSetpoint()) {
-            step++;
-          }
-        }
-        else if (step == 2) {
-          sleepTime.start();
-          rollerMotor.set(-ROLLER_STRENGTH); //deposit
-          if (sleepTime.get() > 1) {
-            step++;
-          }
-        }
-        else {
-          myDrive.arcadeDrive(0, 0); //stop
-          rollerMotor.set(0);
-        }
+        centerCoralAuto();
         break;
-      
 
       case kRightCoral: //score coral when right side of starting line
         if (timer1.get() < 1.5) { //drive forward
@@ -241,6 +254,7 @@ public class Robot extends TimedRobot {
 //Called repeatedly during teleop period
   @Override
   public void teleopPeriodic() {
+    myDrive.feed();
     /*
     * Boost Toggle
     */
