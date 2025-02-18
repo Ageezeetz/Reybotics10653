@@ -48,6 +48,8 @@ public class Robot extends TimedRobot {
 
   final SparkMaxConfig driveConfig = new SparkMaxConfig(); //creating setups for wheel, roller, and climber SparkMaxes 
   final SparkMaxConfig rollerConfig = new SparkMaxConfig();
+  final EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(2 * Math.PI * 3 / 8.45);
+
 
   final Timer timer1 = new Timer(); //new timer
   final Timer sleepTime = new Timer();
@@ -87,6 +89,8 @@ public class Robot extends TimedRobot {
 
     SmartDashboard.putData("Auto choices", m_chooser);
 
+    driveConfig.encoder.apply(encoderConfig);
+
     driveConfig.smartCurrentLimit(60); //sets amp limit for each motor
     driveConfig.voltageCompensation(12); //sends half of given voltage to motor to help keep driving consistent
 
@@ -105,10 +109,6 @@ public class Robot extends TimedRobot {
     rollerConfig.voltageCompensation(10);
     rollerMotor.configure(rollerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    // 2 * PI * wheel radius in conversion unit / gearing
-    EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(2 * Math.PI * 3 / 8.45); //convertepion factor now in inches?
-    driveConfig.encoder.apply(encoderConfig);
-
     myDrive.setSafetyEnabled(safetyBool);
     myDrive.setExpiration(0.5);
   }
@@ -122,7 +122,7 @@ public class Robot extends TimedRobot {
     step++;
     if (step == 1) {
       controller.setSetpoint(10); //sets the destination in INCHES
-      double output = controller.calculate(encoderPositions, controller.getSetpoint()); //change setpoint depending on destination dist
+      double output = controller.calculate(encoderPositions); //change setpoint depending on destination dist
       myDrive.tankDrive(output, -output);
       if (controller.atSetpoint()) {
         step++;
@@ -188,8 +188,6 @@ public class Robot extends TimedRobot {
 
     timer1.reset();
     sleepTime.reset();
-    timer1.start();
-    sleepTime.start();
 
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
@@ -207,10 +205,13 @@ public class Robot extends TimedRobot {
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
       default:
+        leftEncoder.setPosition(0);
+        rightEncoder.setPosition(0);
+        encoderPositions = 0;
         step++;
         if (step == 1) {
           controller.setSetpoint(10); //sets the destination in INCHES
-          double output = controller.calculate(encoderPositions, controller.getSetpoint()); //change setpoint depending on destination dist
+          double output = controller.calculate(encoderPositions); //change setpoint depending on destination dist
           myDrive.tankDrive(output, -output);
           if (controller.atSetpoint()) {
             step++;
@@ -230,6 +231,9 @@ public class Robot extends TimedRobot {
         }
 
       case kRightCoral: //score coral when right side of starting line
+        leftEncoder.setPosition(0);
+        rightEncoder.setPosition(0);
+        encoderPositions = 0;
         if (timer1.get() < 1.5) { //drive forward
           myDrive.tankDrive(0.5, -0.5);
         }
@@ -253,10 +257,13 @@ public class Robot extends TimedRobot {
         break;
 
       case kJustDrive: //get out of starting zone 
+        leftEncoder.setPosition(0);
+        rightEncoder.setPosition(0);
+        encoderPositions = 0;
         step++;
         if (step == 1) {
           controller.setSetpoint(10);
-          double output = controller.calculate(encoderPositions, controller.getSetpoint());
+          double output = controller.calculate(encoderPositions);
           myDrive.tankDrive(output, output);
           if (controller.atSetpoint()) {
             step++;
