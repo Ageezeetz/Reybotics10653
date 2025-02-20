@@ -118,12 +118,17 @@ public class Robot extends TimedRobot {
   /*
    * Functions
    */
+  private double getEncoderPositions() {
+    return (leftEncoder.getPosition() + rightEncoder.getPosition()) / 2;
+  }
+
   private void leftCoralAuto() {
     step++;
     if (step == 1) {
       controller.setSetpoint(10); //sets the destination in INCHES
       double output = controller.calculate(encoderPositions); //change setpoint depending on destination dist
       myDrive.tankDrive(output, -output);
+      myDrive.feed();
       if (controller.atSetpoint()) {
         step++;
       }
@@ -135,6 +140,7 @@ public class Robot extends TimedRobot {
       controller.setSetpoint(rotations);
       double output = controller.calculate(encoderPositions, controller.getSetpoint());
       myDrive.tankDrive(output, output); //turns right
+      myDrive.feed();
       if (controller.atSetpoint()) {
         step++;
       }
@@ -143,6 +149,7 @@ public class Robot extends TimedRobot {
       controller.setSetpoint(10);
       double output = controller.calculate(encoderPositions, controller.getSetpoint());
       myDrive.tankDrive(output, -output);
+      myDrive.feed();
       if (controller.atSetpoint()) {
         step++;
       }
@@ -156,6 +163,7 @@ public class Robot extends TimedRobot {
     }
     else {
       myDrive.arcadeDrive(0, 0); //stop
+      myDrive.feed();
       rollerMotor.set(0);
     }
   }
@@ -172,10 +180,11 @@ public class Robot extends TimedRobot {
     /*
      * Prints
      */
-    // SmartDashboard.putNumber("Left Encoder Position", leftEncoder.getPosition()); //left encoder
-    // SmartDashboard.putNumber("Right Encoder Position", rightEncoder.getPosition()); //right encoder
-    // SmartDashboard.putNumber("Encoder Positions", encoderPositions); //average of both encoders
-    // SmartDashboard.putBoolean("Controller at Target", controller.atSetpoint()); //true or false
+    SmartDashboard.putNumber("Left Encoder Position", leftEncoder.getPosition()); //left encoder
+    SmartDashboard.putNumber("Right Encoder Position", rightEncoder.getPosition()); //right encoder
+    SmartDashboard.putNumber("Encoder Positions", encoderPositions); //average of both encoders
+    SmartDashboard.putNumber("PID Output", controller.calculate(encoderPositions)); //output of PID
+    SmartDashboard.putBoolean("Controller at Target", controller.atSetpoint()); //true or false
   }
 
 
@@ -191,14 +200,13 @@ public class Robot extends TimedRobot {
 
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
-    encoderPositions = 0;
     }
 
 
 
   @Override
   public void autonomousPeriodic() { //function runs many times during auto period
-    myDrive.feed();
+    // myDrive.feed();
     /*
     * Selections for auto modes \o/
     */
@@ -213,6 +221,7 @@ public class Robot extends TimedRobot {
           controller.setSetpoint(10); //sets the destination in INCHES
           double output = controller.calculate(encoderPositions); //change setpoint depending on destination dist
           myDrive.tankDrive(output, -output);
+          myDrive.feed();
           if (controller.atSetpoint()) {
             step++;
           }
@@ -220,6 +229,7 @@ public class Robot extends TimedRobot {
         else if (step == 2) {
           sleepTime.start();
           myDrive.tankDrive(0, 0);
+          myDrive.feed();
           rollerMotor.set(ROLLER_STRENGTH); //deposit
           if (sleepTime.get() > 5) {
             step++;
@@ -227,8 +237,10 @@ public class Robot extends TimedRobot {
         }
         else {
           myDrive.arcadeDrive(0, 0); //stop
+          myDrive.feed();
           rollerMotor.set(0);
         }
+        break;
 
       case kRightCoral: //score coral when right side of starting line
         leftEncoder.setPosition(0);
@@ -236,18 +248,22 @@ public class Robot extends TimedRobot {
         encoderPositions = 0;
         if (timer1.get() < 1.5) { //drive forward
           myDrive.tankDrive(0.5, -0.5);
+          myDrive.feed();
         }
         else if (timer1.get() < 2) { //rotate left
           myDrive.tankDrive(-0.5, 0.5);
+          myDrive.feed();
         }
         else if (timer1.get() < 2.4) { //drive to reef
           myDrive.tankDrive(0.5, 0.5);
+          myDrive.feed();
         }
         else if (timer1.get() < 2.8) { //deposit coral
           rollerMotor.set(ROLLER_STRENGTH);
         }
         else { //stop all
           myDrive.tankDrive(0, 0);
+          myDrive.feed();
           rollerMotor.set(0);
         }
         break;
@@ -265,11 +281,13 @@ public class Robot extends TimedRobot {
           controller.setSetpoint(10);
           double output = controller.calculate(encoderPositions);
           myDrive.tankDrive(output, output);
+          myDrive.feed();
           if (controller.atSetpoint()) {
             step++;
           }
           else {
             myDrive.arcadeDrive(0, 0);
+            myDrive.feed();
           }
         }
         break;
@@ -287,7 +305,6 @@ public class Robot extends TimedRobot {
 
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
-    encoderPositions = 0;
   }
 
 
@@ -295,7 +312,7 @@ public class Robot extends TimedRobot {
 //Called repeatedly during teleop period
   @Override
   public void teleopPeriodic() {
-    myDrive.feed();
+    // myDrive.feed();
     /*
     * Boost Toggle
     */
@@ -326,13 +343,14 @@ public class Robot extends TimedRobot {
       else {
         opposite = 1;
       }
+    }
 
 
     /*
      * Drive Controls
      */
-      myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed*opposite);
-
+    myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed*opposite);
+    myDrive.feed();
 
     /*
      * Roller Controls
@@ -347,7 +365,6 @@ public class Robot extends TimedRobot {
       rollerMotor.set(0);
     }
   }
-}
 
 
 
