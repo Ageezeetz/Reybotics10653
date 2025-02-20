@@ -70,7 +70,7 @@ public class Robot extends TimedRobot {
   double leftEncoderPos = leftEncoder.getPosition();
 
   PIDController controller = new PIDController(0.05, 0, 0);
-  double step = 0; //used to determine which step of auto robot is on
+  double step = 1; //used to determine which step of auto robot is on
 
   boolean safetyBool = true; //safety switch for watchdog/differential drive error (possible fix)
 
@@ -121,8 +121,13 @@ public class Robot extends TimedRobot {
     return (leftEncoder.getPosition() + rightEncoder.getPosition()) / 2;
   }
 
+  private void resetEncoders() {
+    leftEncoder.setPosition(0);
+    rightEncoder.setPosition(0);
+  }
+
   private void leftCoralAuto() {
-    step++;
+    resetEncoders();
     if (step == 1) {
       controller.setSetpoint(10); //sets the destination in INCHES
       double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
@@ -196,9 +201,9 @@ public class Robot extends TimedRobot {
 
     timer1.reset();
     sleepTime.reset();
+    timer1.start();
 
-    leftEncoder.setPosition(0);
-    rightEncoder.setPosition(0);
+    resetEncoders();
     }
 
 
@@ -212,10 +217,8 @@ public class Robot extends TimedRobot {
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
       default:
-        leftEncoder.setPosition(0);
-        rightEncoder.setPosition(0);
+        resetEncoders();
         getEncoderPositions();
-        step++;
         if (step == 1) {
           controller.setSetpoint(10); //sets the destination in INCHES
           double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
@@ -242,9 +245,9 @@ public class Robot extends TimedRobot {
         break;
 
       case kRightCoral: //score coral when right side of starting line
-        leftEncoder.setPosition(0);
-        rightEncoder.setPosition(0);
+        resetEncoders();
         getEncoderPositions();
+        rollerMotor.set(0);
         if (timer1.get() < 1.5) { //drive forward
           myDrive.tankDrive(0.5, -0.5);
           myDrive.feed();
@@ -272,10 +275,8 @@ public class Robot extends TimedRobot {
         break;
 
       case kJustDrive: //get out of starting zone 
-        leftEncoder.setPosition(0);
-        rightEncoder.setPosition(0);
+        resetEncoders();
         getEncoderPositions();
-        step++;
         if (step == 1) {
           controller.setSetpoint(10);
           double output = controller.calculate(getEncoderPositions());
@@ -284,15 +285,9 @@ public class Robot extends TimedRobot {
           if (controller.atSetpoint()) {
             step++;
           }
-          else {
-            myDrive.arcadeDrive(0, 0);
-            myDrive.feed();
-          }
         }
         break;
     }
-
-    // myDrive.tankDrive(0, 0); //possible fix for drivetrain error
   }
 
 
@@ -302,8 +297,7 @@ public class Robot extends TimedRobot {
   public void teleopInit() {
     speedRate = 0;
 
-    leftEncoder.setPosition(0);
-    rightEncoder.setPosition(0);
+    resetEncoders();
   }
 
 
