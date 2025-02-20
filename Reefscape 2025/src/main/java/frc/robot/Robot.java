@@ -37,7 +37,8 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  final SparkMax rollerMotor = new SparkMax(5, MotorType.kBrushless); //creates roller variable
+  final SparkMax rollerMotor = new SparkMax(5, MotorType.kBrushless); //creates roller 
+  // final SparkMax climberMotor = new SparkMax(6, MotorType.kBrushless); //creates climber
 
   final SparkMax leftLeader = new SparkMax(2, MotorType.kBrushless); //creates sparkmax variables
   final SparkMax leftFollower = new SparkMax(3, MotorType.kBrushless);
@@ -48,8 +49,8 @@ public class Robot extends TimedRobot {
 
   final SparkMaxConfig driveConfig = new SparkMaxConfig(); //creating setups for wheel, roller, and climber SparkMaxes 
   final SparkMaxConfig rollerConfig = new SparkMaxConfig();
+  final SparkMaxConfig climberConfig = new SparkMaxConfig();
   final EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(2 * Math.PI * 3 / 8.45);
-
 
   final Timer timer1 = new Timer(); //new timer
   final Timer sleepTime = new Timer();
@@ -88,28 +89,35 @@ public class Robot extends TimedRobot {
 
     SmartDashboard.putData("Auto choices", m_chooser);
 
-    driveConfig.encoder.apply(encoderConfig);
+    driveConfig.encoder.apply(encoderConfig); 
 
     driveConfig.smartCurrentLimit(60); //sets amp limit for each motor
     driveConfig.voltageCompensation(12); //sends half of given voltage to motor to help keep driving consistent
 
     driveConfig.follow(leftLeader); //sets backleft motor to match top left motor
-    leftFollower.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //motor 3
+    leftFollower.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures back left motor
 
     driveConfig.follow(rightLeader); //sets backright motor to match top right motor
-    rightFollower.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //motor 4
+    rightFollower.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures back right motor
 
     driveConfig.disableFollowerMode();
-    rightLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //motor 1
-    leftLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //motor 2
+    rightLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures front right motor
+    leftLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures front left motor
     driveConfig.inverted(true); //flips motor number values
 
     rollerConfig.smartCurrentLimit(60);
     rollerConfig.voltageCompensation(10);
     rollerMotor.configure(rollerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    // climberConfig.smartCurrentLimit(60);
+    // climberConfig.voltageCompensation(10);
+    // climberMotor.configure(climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
     myDrive.setSafetyEnabled(safetyBool);
     myDrive.setExpiration(0.5);
+
+    //if robot overshoots or jitters near target, increase; if robot stops too far from target, decrease
+    // controller.setTolerance(0.5); //sets tolerance for PID controller which may fix stuttering before setpoint
   }
 
 
@@ -126,8 +134,52 @@ public class Robot extends TimedRobot {
     rightEncoder.setPosition(0);
   }
 
+  private void justDrive() {
+    resetEncoders();
+    getEncoderPositions();
+    if (step == 1) {
+      controller.setSetpoint(10);
+      double output = controller.calculate(getEncoderPositions());
+      myDrive.tankDrive(output, output);
+      myDrive.feed();
+      if (controller.atSetpoint()) {
+        step++;
+      }
+    }
+  }
+
+  private void centerCoralAuto() {
+    resetEncoders();
+    getEncoderPositions();
+    if (step == 1) {
+      controller.setSetpoint(10); //sets the destination in INCHES
+      double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
+      myDrive.tankDrive(output, -output);
+      myDrive.feed();
+      if (controller.atSetpoint()) {
+        step++;
+      }
+    }
+    else if (step == 2) {
+      sleepTime.start();
+      myDrive.tankDrive(0, 0);
+      myDrive.feed();
+      rollerMotor.set(ROLLER_STRENGTH); //deposit
+      if (sleepTime.get() > 5) {
+        step++;
+        rollerMotor.set(0);
+      }
+    }
+    else {
+      myDrive.arcadeDrive(0, 0); //stop
+      rollerMotor.set(0);
+      myDrive.feed();
+    }
+  }
+
   private void leftCoralAuto() {
     resetEncoders();
+    getEncoderPositions();
     if (step == 1) {
       controller.setSetpoint(10); //sets the destination in INCHES
       double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
@@ -142,7 +194,7 @@ public class Robot extends TimedRobot {
       double rotations = degrees / 360;
 
       controller.setSetpoint(rotations);
-      double output = controller.calculate(getEncoderPositions(), controller.getSetpoint());
+      double output = controller.calculate(getEncoderPositions());
       myDrive.tankDrive(output, output); //turns right
       myDrive.feed();
       if (controller.atSetpoint()) {
@@ -151,7 +203,7 @@ public class Robot extends TimedRobot {
     }
     else if (step == 3) {
       controller.setSetpoint(10);
-      double output = controller.calculate(getEncoderPositions(), controller.getSetpoint());
+      double output = controller.calculate(getEncoderPositions());
       myDrive.tankDrive(output, -output);
       myDrive.feed();
       if (controller.atSetpoint()) {
@@ -167,18 +219,65 @@ public class Robot extends TimedRobot {
     }
     else {
       myDrive.arcadeDrive(0, 0); //stop
-      myDrive.feed();
       rollerMotor.set(0);
+      myDrive.feed();
+    }
+  }
+
+  private void rightCoralAuto() {
+    resetEncoders();
+    getEncoderPositions();
+    if (step == 1) {
+      controller.setSetpoint(10); //sets the destination in INCHES
+      double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
+      myDrive.tankDrive(output, -output);
+      myDrive.feed();
+      if (controller.atSetpoint()) {
+        step++;
+      }
+    }
+    else if (step == 2) {
+      double degrees = 90; //set amount of degrees to turn
+      double rotations = degrees / 360;
+
+      controller.setSetpoint(rotations);
+      double output = controller.calculate(getEncoderPositions());
+      myDrive.tankDrive(-output, -output); //turns left
+      myDrive.feed();
+      if (controller.atSetpoint()) {
+        step++;
+      }
+    }
+    else if (step == 3) {
+      controller.setSetpoint(10);
+      double output = controller.calculate(getEncoderPositions());
+      myDrive.tankDrive(output, -output);
+      myDrive.feed();
+      if (controller.atSetpoint()) {
+        step++;
+      }
+    }
+    else if (step == 4) {
+      sleepTime.start();
+      rollerMotor.set(ROLLER_STRENGTH); //deposit
+      if (sleepTime.get() > 1) {
+        step++;
+      }
+    }
+    else {
+      myDrive.arcadeDrive(0, 0); //stop
+      rollerMotor.set(0);
+      myDrive.feed();
     }
   }
 
 
 
-
   @Override
   public void robotPeriodic() {
-    rightEncoderPos = rightEncoder.getPosition();
     leftEncoderPos = leftEncoder.getPosition();
+    rightEncoderPos = rightEncoder.getPosition();
+
     getEncoderPositions();
 
     /*
@@ -210,82 +309,25 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousPeriodic() { //function runs many times during auto period
-    // myDrive.feed();
     /*
     * Selections for auto modes \o/
     */
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
       default:
-        resetEncoders();
-        getEncoderPositions();
-        if (step == 1) {
-          controller.setSetpoint(10); //sets the destination in INCHES
-          double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
-          myDrive.tankDrive(output, -output);
-          myDrive.feed();
-          if (controller.atSetpoint()) {
-            step++;
-          }
-        }
-        else if (step == 2) {
-          sleepTime.start();
-          myDrive.tankDrive(0, 0);
-          myDrive.feed();
-          rollerMotor.set(ROLLER_STRENGTH); //deposit
-          if (sleepTime.get() > 5) {
-            step++;
-          }
-        }
-        else {
-          myDrive.arcadeDrive(0, 0); //stop
-          myDrive.feed();
-          rollerMotor.set(0);
-        }
+        centerCoralAuto();
         break;
 
       case kRightCoral: //score coral when right side of starting line
-        resetEncoders();
-        getEncoderPositions();
-        rollerMotor.set(0);
-        if (timer1.get() < 1.5) { //drive forward
-          myDrive.tankDrive(0.5, -0.5);
-          myDrive.feed();
-        }
-        else if (timer1.get() < 2) { //rotate left
-          myDrive.tankDrive(-0.5, 0.5);
-          myDrive.feed();
-        }
-        else if (timer1.get() < 2.4) { //drive to reef
-          myDrive.tankDrive(0.5, 0.5);
-          myDrive.feed();
-        }
-        else if (timer1.get() < 2.8) { //deposit coral
-          rollerMotor.set(ROLLER_STRENGTH);
-        }
-        else { //stop all
-          myDrive.tankDrive(0, 0);
-          myDrive.feed();
-          rollerMotor.set(0);
-        }
+        rightCoralAuto();
         break;
 
       case kLeftCoral: //score coral when left side of starting line
         leftCoralAuto();
         break;
 
-      case kJustDrive: //get out of starting zone 
-        resetEncoders();
-        getEncoderPositions();
-        if (step == 1) {
-          controller.setSetpoint(10);
-          double output = controller.calculate(getEncoderPositions());
-          myDrive.tankDrive(output, output);
-          myDrive.feed();
-          if (controller.atSetpoint()) {
-            step++;
-          }
-        }
+      case kJustDrive: //get out of starting zone (just in case roller doesn't work) 
+        justDrive();
         break;
     }
   }
@@ -295,8 +337,6 @@ public class Robot extends TimedRobot {
 //Called once at beginning of teleop period
   @Override
   public void teleopInit() {
-    speedRate = 0;
-
     resetEncoders();
   }
 
@@ -305,7 +345,8 @@ public class Robot extends TimedRobot {
 //Called repeatedly during teleop period
   @Override
   public void teleopPeriodic() {
-    // myDrive.feed();
+    // myDrive.feed();                        //may not be needed since there is a need feed below the drive line
+
     /*
     * Boost Toggle
     */
