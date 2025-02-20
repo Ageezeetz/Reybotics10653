@@ -330,6 +330,7 @@ public class Robot extends TimedRobot {
      * Flip Direction Toggle
      */
     if (driverGamepad.getRightBumperButtonPressed()) {
+      // opposite *= -1;
       if (opposite == 1) {
         opposite = -1;
       }
