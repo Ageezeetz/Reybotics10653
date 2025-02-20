@@ -68,7 +68,6 @@ public class Robot extends TimedRobot {
 
   double rightEncoderPos = rightEncoder.getPosition();
   double leftEncoderPos = leftEncoder.getPosition();
-  double encoderPositions = (leftEncoderPos + rightEncoderPos) / 2;
 
   PIDController controller = new PIDController(0.05, 0, 0);
   double step = 0; //used to determine which step of auto robot is on
@@ -126,7 +125,7 @@ public class Robot extends TimedRobot {
     step++;
     if (step == 1) {
       controller.setSetpoint(10); //sets the destination in INCHES
-      double output = controller.calculate(encoderPositions); //change setpoint depending on destination dist
+      double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
       myDrive.tankDrive(output, -output);
       myDrive.feed();
       if (controller.atSetpoint()) {
@@ -138,7 +137,7 @@ public class Robot extends TimedRobot {
       double rotations = degrees / 360;
 
       controller.setSetpoint(rotations);
-      double output = controller.calculate(encoderPositions, controller.getSetpoint());
+      double output = controller.calculate(getEncoderPositions(), controller.getSetpoint());
       myDrive.tankDrive(output, output); //turns right
       myDrive.feed();
       if (controller.atSetpoint()) {
@@ -147,7 +146,7 @@ public class Robot extends TimedRobot {
     }
     else if (step == 3) {
       controller.setSetpoint(10);
-      double output = controller.calculate(encoderPositions, controller.getSetpoint());
+      double output = controller.calculate(getEncoderPositions(), controller.getSetpoint());
       myDrive.tankDrive(output, -output);
       myDrive.feed();
       if (controller.atSetpoint()) {
@@ -175,15 +174,15 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     rightEncoderPos = rightEncoder.getPosition();
     leftEncoderPos = leftEncoder.getPosition();
-    encoderPositions = (leftEncoderPos + rightEncoderPos) / 2;
+    getEncoderPositions();
 
     /*
      * Prints
      */
     SmartDashboard.putNumber("Left Encoder Position", leftEncoder.getPosition()); //left encoder
     SmartDashboard.putNumber("Right Encoder Position", rightEncoder.getPosition()); //right encoder
-    SmartDashboard.putNumber("Encoder Positions", encoderPositions); //average of both encoders
-    SmartDashboard.putNumber("PID Output", controller.calculate(encoderPositions)); //output of PID
+    SmartDashboard.putNumber("Encoder Positions", getEncoderPositions()); //average of both encoders
+    SmartDashboard.putNumber("PID Output", controller.calculate(getEncoderPositions())); //output of PID
     SmartDashboard.putBoolean("Controller at Target", controller.atSetpoint()); //true or false
   }
 
@@ -215,11 +214,11 @@ public class Robot extends TimedRobot {
       default:
         leftEncoder.setPosition(0);
         rightEncoder.setPosition(0);
-        encoderPositions = 0;
+        getEncoderPositions();
         step++;
         if (step == 1) {
           controller.setSetpoint(10); //sets the destination in INCHES
-          double output = controller.calculate(encoderPositions); //change setpoint depending on destination dist
+          double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
           myDrive.tankDrive(output, -output);
           myDrive.feed();
           if (controller.atSetpoint()) {
@@ -245,7 +244,7 @@ public class Robot extends TimedRobot {
       case kRightCoral: //score coral when right side of starting line
         leftEncoder.setPosition(0);
         rightEncoder.setPosition(0);
-        encoderPositions = 0;
+        getEncoderPositions();
         if (timer1.get() < 1.5) { //drive forward
           myDrive.tankDrive(0.5, -0.5);
           myDrive.feed();
@@ -275,11 +274,11 @@ public class Robot extends TimedRobot {
       case kJustDrive: //get out of starting zone 
         leftEncoder.setPosition(0);
         rightEncoder.setPosition(0);
-        encoderPositions = 0;
+        getEncoderPositions();
         step++;
         if (step == 1) {
           controller.setSetpoint(10);
-          double output = controller.calculate(encoderPositions);
+          double output = controller.calculate(getEncoderPositions());
           myDrive.tankDrive(output, output);
           myDrive.feed();
           if (controller.atSetpoint()) {
