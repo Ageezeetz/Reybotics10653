@@ -146,6 +146,11 @@ public class Robot extends TimedRobot {
         step++;
       }
     }
+    else {
+      myDrive.tankDrive(0, 0);
+      rollerMotor.set(0);
+      myDrive.feed();
+    }
   }
 
   private void centerCoralAuto() {
@@ -345,7 +350,7 @@ public class Robot extends TimedRobot {
 //Called repeatedly during teleop period
   @Override
   public void teleopPeriodic() {
-    // myDrive.feed();                        //may not be needed since there is a need feed below the drive line
+    // myDrive.feed();                         //may not be needed since there is a need feed below the drive line
 
     /*
     * Boost Toggle
