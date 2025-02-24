@@ -38,7 +38,7 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
   final SparkMax rollerMotor = new SparkMax(5, MotorType.kBrushless); //creates roller 
-  // final SparkMax climberMotor = new SparkMax(6, MotorType.kBrushless); //creates climber
+  final SparkMax climberMotor = new SparkMax(6, MotorType.kBrushless); //creates climber
 
   final SparkMax leftLeader = new SparkMax(2, MotorType.kBrushless); //creates sparkmax variables
   final SparkMax leftFollower = new SparkMax(3, MotorType.kBrushless);
@@ -56,8 +56,9 @@ public class Robot extends TimedRobot {
   final Timer sleepTime = new Timer();
 
   final double ROLLER_STRENGTH = 0.25; //variable for roller strength
+  final double CLIMBER_STRENGTH = 0.2; //variable for climber strength
   double driveSpeed = 0; //variable for boost drive speed
-  double opposite = 1; //variable for default robot direction
+  double opposite = -1; //variable for default robot direction
   double speedRate = 0;
   double setpoint = 0;
   
@@ -109,9 +110,9 @@ public class Robot extends TimedRobot {
     rollerConfig.voltageCompensation(10);
     rollerMotor.configure(rollerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    // climberConfig.smartCurrentLimit(60);
-    // climberConfig.voltageCompensation(10);
-    // climberMotor.configure(climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    climberConfig.smartCurrentLimit(60);
+    climberConfig.voltageCompensation(10);
+    climberMotor.configure(climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     myDrive.setSafetyEnabled(safetyBool);
     myDrive.setExpiration(0.5);
@@ -126,7 +127,7 @@ public class Robot extends TimedRobot {
    * Functions
    */
   private double getEncoderPositions() {
-    return (leftEncoder.getPosition() + rightEncoder.getPosition()) / 2;
+    return (leftEncoder.getPosition() + -(rightEncoder.getPosition())) / 2;
   }
 
   private void resetEncoders() {
@@ -289,7 +290,7 @@ public class Robot extends TimedRobot {
      * Prints
      */
     SmartDashboard.putNumber("Left Encoder Position", leftEncoder.getPosition()); //left encoder
-    SmartDashboard.putNumber("Right Encoder Position", rightEncoder.getPosition()); //right encoder
+    SmartDashboard.putNumber("Right Encoder Position", -(rightEncoder.getPosition())); //right encoder
     SmartDashboard.putNumber("Encoder Positions", getEncoderPositions()); //average of both encoders
     SmartDashboard.putNumber("PID Output", controller.calculate(getEncoderPositions())); //output of PID
     SmartDashboard.putBoolean("Controller at Target", controller.atSetpoint()); //true or false
@@ -350,8 +351,6 @@ public class Robot extends TimedRobot {
 //Called repeatedly during teleop period
   @Override
   public void teleopPeriodic() {
-    // myDrive.feed();                         //may not be needed since there is a need feed below the drive line
-
     /*
     * Boost Toggle
     */
@@ -365,10 +364,10 @@ public class Robot extends TimedRobot {
     }
 
     if (speedRate == 1) { //speed change
-      driveSpeed = 0.75;
+      driveSpeed = 0.80;
     }
     else {
-      driveSpeed = 0.5;
+      driveSpeed = 0.60;
     }
 
 
@@ -376,13 +375,7 @@ public class Robot extends TimedRobot {
      * Flip Direction Toggle
      */
     if (driverGamepad.getRightBumperButtonPressed()) {
-      // opposite *= -1;
-      if (opposite == 1) {
-        opposite = -1;
-      }
-      else {
-        opposite = 1;
-      }
+      opposite *= -1;
     }
 
 
@@ -403,6 +396,20 @@ public class Robot extends TimedRobot {
     }
     else {
       rollerMotor.set(0);
+    }
+
+    /*
+     * Climber Controls
+     */
+    //check to make sure the comments actually make sense with what the climber is doing
+    if (-operatorGamepad.getRightY() < -0.1) { //if joystick is up,
+      climberMotor.set(-CLIMBER_STRENGTH); //lower climber
+    }
+    else if (-operatorGamepad.getRightY() > 0.1) { //if joystick is down,
+      climberMotor.set(CLIMBER_STRENGTH); //raise climber
+    }
+    else {
+      climberMotor.set(0);
     }
   }
 
