@@ -61,6 +61,7 @@ public class Robot extends TimedRobot {
   double opposite = -1; //variable for default robot direction
   double speedRate = 0;
   double setpoint = 0;
+  boolean climbing = false;
   
   final XboxController driverGamepad = new XboxController(0);
   final XboxController operatorGamepad = new XboxController(1);
@@ -133,6 +134,29 @@ public class Robot extends TimedRobot {
   private void resetEncoders() {
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
+  }
+  
+  private void boostToggle() {
+    if (speedRate == 1) {
+      driveSpeed = 0.75;
+      System.out.println("BOOST IS ENABLED!");
+    }
+    else {
+      driveSpeed = 0.50;
+      System.out.println("BOOST IS DISABLED!");
+    }
+  }
+
+  private void isClimbing() {
+    climbing = !climbing;
+    if (climbing) { //if climbing is true
+      driveSpeed = 0.25; //lowers drive speed
+      System.out.println("Climbing mode activated");
+    }
+    else {
+      boostToggle();
+      System.out.println("Climbing mode deactivated");
+    }
   }
 
   private void justDrive() {
@@ -362,13 +386,7 @@ public class Robot extends TimedRobot {
         speedRate++;
       }
     }
-
-    if (speedRate == 1) { //speed change
-      driveSpeed = 0.80;
-    }
-    else {
-      driveSpeed = 0.60;
-    }
+    boostToggle(); //speed change
 
 
     /*
@@ -376,6 +394,12 @@ public class Robot extends TimedRobot {
      */
     if (driverGamepad.getRightBumperButtonPressed()) {
       opposite *= -1;
+      if (opposite == 1) {
+        System.out.println("Robot is facing backwards!");
+      }
+      else {
+        System.out.println("Robot is facing forwards!");
+      }
     }
 
 
@@ -401,7 +425,10 @@ public class Robot extends TimedRobot {
     /*
      * Climber Controls
      */
-    //check to make sure the comments actually make sense with what the climber is doing
+    if (operatorGamepad.getAButtonPressed()) {
+      isClimbing();
+    }
+
     if (-operatorGamepad.getRightY() < -0.1) { //if joystick is up,
       climberMotor.set(-CLIMBER_STRENGTH); //lower climber
     }
