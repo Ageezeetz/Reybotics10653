@@ -72,10 +72,12 @@ public class Robot extends TimedRobot {
   double rightEncoderPos = rightEncoder.getPosition();
   double leftEncoderPos = leftEncoder.getPosition();
 
-  PIDController controller = new PIDController(0.05, 0, 0);
+  PIDController controller = new PIDController(0.02, 0, 0);
   double step = 1; //used to determine which step of auto robot is on
 
-  boolean safetyBool = true; //safety switch for watchdog/differential drive error (possible fix)
+  boolean safetyBool = true; //safety switch for watchdog/differential drive error
+
+  // double wheelCircumference = Math.PI * 3; //pi * wheel diameter
 
 
 
@@ -119,7 +121,7 @@ public class Robot extends TimedRobot {
     myDrive.setExpiration(0.5);
 
     //if robot overshoots or jitters near target, increase; if robot stops too far from target, decrease
-    // controller.setTolerance(0.5); //sets tolerance for PID controller which may fix stuttering before setpoint
+    controller.setTolerance(0.0005); //sets tolerance for PID controller which may fix stuttering before setpoint
   }
 
 
@@ -139,36 +141,36 @@ public class Robot extends TimedRobot {
   private void boostToggle() {
     if (speedRate == 1) {
       driveSpeed = 0.75;
-      System.out.println("BOOST IS ENABLED!");
     }
     else {
       driveSpeed = 0.50;
-      System.out.println("BOOST IS DISABLED!");
     }
   }
 
   private void isClimbing() {
     climbing = !climbing;
-    if (climbing) { //if climbing is true
+    if (climbing == true) { //if climbing is true
       driveSpeed = 0.25; //lowers drive speed
       System.out.println("Climbing mode activated");
     }
-    else {
-      boostToggle();
+    else { //if climbing is false
+      boostToggle(); //returns back to the default speed toggle
       System.out.println("Climbing mode deactivated");
     }
   }
 
   private void justDrive() {
-    resetEncoders();
     getEncoderPositions();
     if (step == 1) {
-      controller.setSetpoint(10);
-      double output = controller.calculate(getEncoderPositions());
-      myDrive.tankDrive(output, output);
+      controller.setSetpoint(-100);
+      double output = controller.calculate(getEncoderPositions()); //may need    , controller.getSetpoint()
+      myDrive.tankDrive(-output, output);
       myDrive.feed();
-      if (controller.atSetpoint()) {
+      sleepTime.start();
+      if (controller.atSetpoint() || sleepTime.get() > 3.5) {
         step++;
+        sleepTime.stop();
+        sleepTime.reset();
       }
     }
     else {
@@ -179,25 +181,26 @@ public class Robot extends TimedRobot {
   }
 
   private void centerCoralAuto() {
-    resetEncoders();
-    getEncoderPositions();
     if (step == 1) {
-      controller.setSetpoint(10); //sets the destination in INCHES
-      double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
-      myDrive.tankDrive(output, -output);
+      controller.setSetpoint(-100); //sets distance to 100 inches (~8 feet)
+      double output = controller.calculate(getEncoderPositions(), controller.getSetpoint());
+      myDrive.tankDrive(-output, output);
       myDrive.feed();
-      if (controller.atSetpoint()) {
+      sleepTime.start();
+      if (controller.atSetpoint() || sleepTime.get() > 3.5) {
         step++;
+        sleepTime.stop();
+        sleepTime.reset();
       }
     }
     else if (step == 2) {
       sleepTime.start();
-      myDrive.tankDrive(0, 0);
+      myDrive.tankDrive(0, 0); //stop moving
       myDrive.feed();
       rollerMotor.set(ROLLER_STRENGTH); //deposit
-      if (sleepTime.get() > 5) {
+      if (sleepTime.get() > 1) {
         step++;
-        rollerMotor.set(0);
+        rollerMotor.set(0); //stop once the roller has ran for 5 seconds
       }
     }
     else {
@@ -211,8 +214,8 @@ public class Robot extends TimedRobot {
     resetEncoders();
     getEncoderPositions();
     if (step == 1) {
-      controller.setSetpoint(10); //sets the destination in INCHES
-      double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
+      controller.setSetpoint(10); //sets distance to 10 inches
+      double output = controller.calculate(getEncoderPositions());
       myDrive.tankDrive(output, -output);
       myDrive.feed();
       if (controller.atSetpoint()) {
@@ -232,7 +235,7 @@ public class Robot extends TimedRobot {
       }
     }
     else if (step == 3) {
-      controller.setSetpoint(10);
+      controller.setSetpoint(10); //sets distance to 10 inches
       double output = controller.calculate(getEncoderPositions());
       myDrive.tankDrive(output, -output);
       myDrive.feed();
@@ -243,11 +246,12 @@ public class Robot extends TimedRobot {
     else if (step == 4) {
       sleepTime.start();
       rollerMotor.set(ROLLER_STRENGTH); //deposit
-      if (sleepTime.get() > 1) {
+      if (sleepTime.get() > 5) {
         step++;
       }
     }
     else {
+      controller.setSetpoint(0);
       myDrive.arcadeDrive(0, 0); //stop
       rollerMotor.set(0);
       myDrive.feed();
@@ -258,8 +262,8 @@ public class Robot extends TimedRobot {
     resetEncoders();
     getEncoderPositions();
     if (step == 1) {
-      controller.setSetpoint(10); //sets the destination in INCHES
-      double output = controller.calculate(getEncoderPositions()); //change setpoint depending on destination dist
+      controller.setSetpoint(10);
+      double output = controller.calculate(getEncoderPositions());
       myDrive.tankDrive(output, -output);
       myDrive.feed();
       if (controller.atSetpoint()) {
@@ -295,6 +299,7 @@ public class Robot extends TimedRobot {
       }
     }
     else {
+      controller.setSetpoint(0);
       myDrive.arcadeDrive(0, 0); //stop
       rollerMotor.set(0);
       myDrive.feed();
@@ -316,7 +321,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Left Encoder Position", leftEncoder.getPosition()); //left encoder
     SmartDashboard.putNumber("Right Encoder Position", -(rightEncoder.getPosition())); //right encoder
     SmartDashboard.putNumber("Encoder Positions", getEncoderPositions()); //average of both encoders
-    SmartDashboard.putNumber("PID Output", controller.calculate(getEncoderPositions())); //output of PID
+    SmartDashboard.putNumber("PID Output", controller.calculate(getEncoderPositions())); //power output of PID
     SmartDashboard.putBoolean("Controller at Target", controller.atSetpoint()); //true or false
   }
 
@@ -381,11 +386,14 @@ public class Robot extends TimedRobot {
     if (driverGamepad.getLeftBumperButtonPressed()) { //toggle
       if (speedRate == 1) {
         speedRate--;
+        System.out.println("Set speed to %75!");
       }
       else {
         speedRate++;
+        System.out.println("Set speed to %50!");
       }
     }
+    
     boostToggle(); //speed change
 
 
@@ -409,6 +417,7 @@ public class Robot extends TimedRobot {
     myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed*opposite);
     myDrive.feed();
 
+
     /*
      * Roller Controls
      */
@@ -422,6 +431,7 @@ public class Robot extends TimedRobot {
       rollerMotor.set(0);
     }
 
+    
     /*
      * Climber Controls
      */
