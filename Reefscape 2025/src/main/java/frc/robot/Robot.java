@@ -162,7 +162,7 @@ public class Robot extends TimedRobot {
   private void justDrive() {
     getEncoderPositions();
     if (step == 1) {
-      controller.setSetpoint(-100);
+      controller.setSetpoint(-100); //goes in the direction of the roller
       double output = controller.calculate(getEncoderPositions()); //may need    , controller.getSetpoint()
       myDrive.tankDrive(-output, output);
       myDrive.feed();
@@ -182,7 +182,7 @@ public class Robot extends TimedRobot {
 
   private void centerCoralAuto() {
     if (step == 1) {
-      controller.setSetpoint(-100); //sets distance to 100 inches (~8 feet)
+      controller.setSetpoint(-(10 * 12)); //sets distance to 10 feet (10 feet * 12 inches)
       double output = controller.calculate(getEncoderPositions(), controller.getSetpoint());
       myDrive.tankDrive(-output, output);
       myDrive.feed();
@@ -386,15 +386,15 @@ public class Robot extends TimedRobot {
     if (driverGamepad.getLeftBumperButtonPressed()) { //toggle
       if (speedRate == 1) {
         speedRate--;
-        System.out.println("Set speed to %75!");
+        System.out.println("Speed is set to %75!");
       }
       else {
         speedRate++;
-        System.out.println("Set speed to %50!");
+        System.out.println("Speed is set to %50!");
       }
     }
     
-    boostToggle(); //speed change
+    boostToggle(); //speed change depending on statement above
 
 
     /*
@@ -439,11 +439,11 @@ public class Robot extends TimedRobot {
       isClimbing();
     }
 
-    if (-operatorGamepad.getRightY() < -0.1) { //if joystick is up,
-      climberMotor.set(-CLIMBER_STRENGTH); //lower climber
+    if (-operatorGamepad.getRightY() < -0.1) { //if joystick is down,
+      climberMotor.set(-CLIMBER_STRENGTH); //pull climber
     }
-    else if (-operatorGamepad.getRightY() > 0.1) { //if joystick is down,
-      climberMotor.set(CLIMBER_STRENGTH); //raise climber
+    else if (-operatorGamepad.getRightY() > 0.1) { //if joystick is up,
+      climberMotor.set(CLIMBER_STRENGTH); //lower climber
     }
     else {
       climberMotor.set(0);
