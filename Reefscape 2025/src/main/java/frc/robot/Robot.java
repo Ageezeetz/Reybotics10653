@@ -147,44 +147,36 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private void isClimbing() {
-    climbing = !climbing;
+  private void isClimbing() { //default is false
+    climbing = !climbing; //sets climbing to opposite (true for first button press)
     if (climbing == true) { //if climbing is true
       driveSpeed = 0.25; //lowers drive speed
       System.out.println("Climbing mode activated");
     }
-    else { //if climbing is false
-      boostToggle(); //returns back to the default speed toggle
-      System.out.println("Climbing mode deactivated");
-    }
-  }
-
-  private void justDrive() {
-    getEncoderPositions();
-    if (step == 1) {
-      controller.setSetpoint(-100); //goes in the direction of the roller
-      double output = controller.calculate(getEncoderPositions()); //may need    , controller.getSetpoint()
-      myDrive.tankDrive(-output, output);
-      myDrive.feed();
-      sleepTime.start();
-      if (controller.atSetpoint() || sleepTime.get() > 3.5) {
-        step++;
-        sleepTime.stop();
-        sleepTime.reset();
-      }
-    }
     else {
-      myDrive.tankDrive(0, 0);
-      rollerMotor.set(0);
-      myDrive.feed();
+      System.out.println("Climbing mode activated");
+      // boostToggle();
     }
+
+
+
+    // else if (climbing == false && speedRate == 1) { //if not climbing and boost is active
+    //   driveSpeed = 0.75;
+    //   System.out.println("Climbing mode deactivated");
+    // }
+    // else { //if not climbing and boost is not active
+    //   driveSpeed = 0.50;
+    //   System.out.println("Climbing mode deactivated");
+    // }
   }
 
   private void centerCoralAuto() {
     if (step == 1) {
-      controller.setSetpoint(-(10 * 12)); //sets distance to 10 feet (10 feet * 12 inches)
-      double output = controller.calculate(getEncoderPositions(), controller.getSetpoint());
-      myDrive.tankDrive(-output, output);
+      controller.setSetpoint(-100);
+      double leftOutput = controller.calculate(leftEncoderPos);
+      double rightOutput = controller.calculate(rightEncoderPos);
+      // double output = controller.calculate(getEncoderPositions());
+      myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller
       myDrive.feed();
       sleepTime.start();
       if (controller.atSetpoint() || sleepTime.get() > 3.5) {
@@ -211,7 +203,6 @@ public class Robot extends TimedRobot {
   }
 
   private void leftCoralAuto() {
-    resetEncoders();
     getEncoderPositions();
     if (step == 1) {
       controller.setSetpoint(10); //sets distance to 10 inches
@@ -259,7 +250,6 @@ public class Robot extends TimedRobot {
   }
 
   private void rightCoralAuto() {
-    resetEncoders();
     getEncoderPositions();
     if (step == 1) {
       controller.setSetpoint(10);
@@ -301,6 +291,27 @@ public class Robot extends TimedRobot {
     else {
       controller.setSetpoint(0);
       myDrive.arcadeDrive(0, 0); //stop
+      rollerMotor.set(0);
+      myDrive.feed();
+    }
+  }
+
+  private void justDrive() {
+    getEncoderPositions();
+    if (step == 1) {
+      controller.setSetpoint(-100);
+      double output = controller.calculate(getEncoderPositions());
+      myDrive.tankDrive(-output, output); //goes in the direction of the roller
+      myDrive.feed();
+      sleepTime.start();
+      if (controller.atSetpoint() || sleepTime.get() > 3.5) {
+        step++;
+        sleepTime.stop();
+        sleepTime.reset();
+      }
+    }
+    else {
+      myDrive.tankDrive(0, 0);
       rollerMotor.set(0);
       myDrive.feed();
     }
@@ -394,7 +405,9 @@ public class Robot extends TimedRobot {
       }
     }
     
-    boostToggle(); //speed change depending on statement above
+    if (!climbing) {
+      boostToggle(); //speed change if not climbing
+    }
 
 
     /*
@@ -414,7 +427,7 @@ public class Robot extends TimedRobot {
     /*
      * Drive Controls
      */
-    myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed*opposite);
+    myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.125, driverGamepad.getLeftY()*driveSpeed*opposite);
     myDrive.feed();
 
 
