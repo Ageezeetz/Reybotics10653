@@ -56,7 +56,7 @@ public class Robot extends TimedRobot {
   final Timer sleepTime = new Timer();
 
   final double ROLLER_STRENGTH = 0.25; //variable for roller strength
-  final double CLIMBER_STRENGTH = 0.2; //variable for climber strength
+  final double CLIMBER_STRENGTH = 0.75; //variable for climber strength
   double driveSpeed = 0; //variable for boost drive speed
   double opposite = -1; //variable for default robot direction
   double speedRate = 0;
@@ -68,9 +68,11 @@ public class Robot extends TimedRobot {
 
   RelativeEncoder leftEncoder = leftLeader.getEncoder();
   RelativeEncoder rightEncoder = rightLeader.getEncoder();
+  RelativeEncoder climberEncoder = climberMotor.getEncoder();
 
   double rightEncoderPos = rightEncoder.getPosition();
   double leftEncoderPos = leftEncoder.getPosition();
+  double climberEncoderPos = climberEncoder.getPosition();
 
   PIDController controller = new PIDController(0.02, 0, 0);
   double step = 1; //used to determine which step of auto robot is on
@@ -136,6 +138,7 @@ public class Robot extends TimedRobot {
   private void resetEncoders() {
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
+    climberEncoder.setPosition(0);
   }
   
   private void boostToggle() {
@@ -154,32 +157,20 @@ public class Robot extends TimedRobot {
       System.out.println("Climbing mode activated");
     }
     else {
-      System.out.println("Climbing mode activated");
-      // boostToggle();
+      System.out.println("Climbing mode deactivated");
     }
-
-
-
-    // else if (climbing == false && speedRate == 1) { //if not climbing and boost is active
-    //   driveSpeed = 0.75;
-    //   System.out.println("Climbing mode deactivated");
-    // }
-    // else { //if not climbing and boost is not active
-    //   driveSpeed = 0.50;
-    //   System.out.println("Climbing mode deactivated");
-    // }
   }
 
-  private void centerCoralAuto() {
+  private void centerCoralAuto() {                                                                //HAVE TO TEST 2/28/25
     if (step == 1) {
-      controller.setSetpoint(-100);
+      controller.setSetpoint(-88);
       double leftOutput = controller.calculate(leftEncoderPos);
-      double rightOutput = controller.calculate(rightEncoderPos);
+      double rightOutput = controller.calculate(-rightEncoderPos);
       // double output = controller.calculate(getEncoderPositions());
       myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller
       myDrive.feed();
       sleepTime.start();
-      if (controller.atSetpoint() || sleepTime.get() > 3.5) {
+      if (controller.atSetpoint() || sleepTime.get() > 3.75) {
         step++;
         sleepTime.stop();
         sleepTime.reset();
@@ -453,10 +444,10 @@ public class Robot extends TimedRobot {
     }
 
     if (-operatorGamepad.getRightY() < -0.1) { //if joystick is down,
-      climberMotor.set(-CLIMBER_STRENGTH); //pull climber
+      climberMotor.set(CLIMBER_STRENGTH); //pull climber
     }
     else if (-operatorGamepad.getRightY() > 0.1) { //if joystick is up,
-      climberMotor.set(CLIMBER_STRENGTH); //lower climber
+      climberMotor.set(-CLIMBER_STRENGTH); //lower climber
     }
     else {
       climberMotor.set(0);
