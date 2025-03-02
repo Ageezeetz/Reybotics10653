@@ -11,6 +11,7 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.EncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -21,7 +22,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 
 import edu.wpi.first.math.controller.PIDController;
-
 
 
 /*
@@ -124,7 +124,9 @@ public class Robot extends TimedRobot {
 
     //if robot overshoots or jitters near target, increase; if robot stops too far from target, decrease
     controller.setTolerance(0.0005); //sets tolerance for PID controller which may fix stuttering before setpoint
-  }
+
+    // leftLeader.setIdleMode(IdleMode.kBrake); //1 is brake, 0 is coast                                   wasn't working
+  } 
 
 
 
@@ -157,20 +159,19 @@ public class Robot extends TimedRobot {
       System.out.println("Climbing mode activated");
     }
     else {
-      System.out.println("Climbing mode deactivated");
+      System.out.println("Climbing mode is not activated");
     }
   }
 
-  private void centerCoralAuto() {                                                                //HAVE TO TEST 2/28/25
+  private void centerCoralAuto() {
     if (step == 1) {
-      controller.setSetpoint(-88);
+      controller.setSetpoint(-76);
       double leftOutput = controller.calculate(leftEncoderPos);
       double rightOutput = controller.calculate(-rightEncoderPos);
-      // double output = controller.calculate(getEncoderPositions());
-      myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller
+      myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller 
       myDrive.feed();
       sleepTime.start();
-      if (controller.atSetpoint() || sleepTime.get() > 3.75) {
+      if (controller.atSetpoint() || sleepTime.get() > 3) {
         step++;
         sleepTime.stop();
         sleepTime.reset();
@@ -180,10 +181,12 @@ public class Robot extends TimedRobot {
       sleepTime.start();
       myDrive.tankDrive(0, 0); //stop moving
       myDrive.feed();
-      rollerMotor.set(ROLLER_STRENGTH); //deposit
-      if (sleepTime.get() > 1) {
+      rollerMotor.set(-ROLLER_STRENGTH); //deposit
+      if (sleepTime.get() > 1.5) {
         step++;
         rollerMotor.set(0); //stop once the roller has ran for 5 seconds
+        sleepTime.stop();
+        sleepTime.reset();
       }
     }
     else {
@@ -194,46 +197,32 @@ public class Robot extends TimedRobot {
   }
 
   private void leftCoralAuto() {
-    getEncoderPositions();
     if (step == 1) {
-      controller.setSetpoint(10); //sets distance to 10 inches
-      double output = controller.calculate(getEncoderPositions());
-      myDrive.tankDrive(output, -output);
+      controller.setSetpoint(-124);
+      double leftOutput = controller.calculate(leftEncoderPos);
+      double rightOutput = controller.calculate(-rightEncoderPos);
+      myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller 
       myDrive.feed();
-      if (controller.atSetpoint()) {
+      sleepTime.start();
+      if (controller.atSetpoint() || sleepTime.get() > 3) {
         step++;
+        sleepTime.stop();
+        sleepTime.reset();
       }
     }
     else if (step == 2) {
-      double degrees = 90; //set amount of degrees to turn
-      double rotations = degrees / 360;
-
-      controller.setSetpoint(rotations);
-      double output = controller.calculate(getEncoderPositions());
-      myDrive.tankDrive(output, output); //turns right
-      myDrive.feed();
-      if (controller.atSetpoint()) {
-        step++;
-      }
-    }
-    else if (step == 3) {
-      controller.setSetpoint(10); //sets distance to 10 inches
-      double output = controller.calculate(getEncoderPositions());
-      myDrive.tankDrive(output, -output);
-      myDrive.feed();
-      if (controller.atSetpoint()) {
-        step++;
-      }
-    }
-    else if (step == 4) {
       sleepTime.start();
-      rollerMotor.set(ROLLER_STRENGTH); //deposit
-      if (sleepTime.get() > 5) {
+      myDrive.tankDrive(0, 0); //stop moving
+      myDrive.feed();
+      rollerMotor.set(-ROLLER_STRENGTH); //deposit
+      if (sleepTime.get() > 1.5) {
         step++;
+        rollerMotor.set(0); //stop once the roller has ran for 5 seconds
+        sleepTime.stop();
+        sleepTime.reset();
       }
     }
     else {
-      controller.setSetpoint(0);
       myDrive.arcadeDrive(0, 0); //stop
       rollerMotor.set(0);
       myDrive.feed();
@@ -241,46 +230,32 @@ public class Robot extends TimedRobot {
   }
 
   private void rightCoralAuto() {
-    getEncoderPositions();
     if (step == 1) {
-      controller.setSetpoint(10);
-      double output = controller.calculate(getEncoderPositions());
-      myDrive.tankDrive(output, -output);
+      controller.setSetpoint(-124);
+      double leftOutput = controller.calculate(leftEncoderPos);
+      double rightOutput = controller.calculate(-rightEncoderPos);
+      myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller 
       myDrive.feed();
-      if (controller.atSetpoint()) {
+      sleepTime.start();
+      if (controller.atSetpoint() || sleepTime.get() > 3) {
         step++;
+        sleepTime.stop();
+        sleepTime.reset();
       }
     }
     else if (step == 2) {
-      double degrees = 90; //set amount of degrees to turn
-      double rotations = degrees / 360;
-
-      controller.setSetpoint(rotations);
-      double output = controller.calculate(getEncoderPositions());
-      myDrive.tankDrive(-output, -output); //turns left
-      myDrive.feed();
-      if (controller.atSetpoint()) {
-        step++;
-      }
-    }
-    else if (step == 3) {
-      controller.setSetpoint(10);
-      double output = controller.calculate(getEncoderPositions());
-      myDrive.tankDrive(output, -output);
-      myDrive.feed();
-      if (controller.atSetpoint()) {
-        step++;
-      }
-    }
-    else if (step == 4) {
       sleepTime.start();
-      rollerMotor.set(ROLLER_STRENGTH); //deposit
-      if (sleepTime.get() > 1) {
+      myDrive.tankDrive(0, 0); //stop moving
+      myDrive.feed();
+      rollerMotor.set(-ROLLER_STRENGTH); //deposit
+      if (sleepTime.get() > 1.5) {
         step++;
+        rollerMotor.set(0); //stop once the roller has ran for 5 seconds
+        sleepTime.stop();
+        sleepTime.reset();
       }
     }
     else {
-      controller.setSetpoint(0);
       myDrive.arcadeDrive(0, 0); //stop
       rollerMotor.set(0);
       myDrive.feed();
@@ -418,7 +393,7 @@ public class Robot extends TimedRobot {
     /*
      * Drive Controls
      */
-    myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.125, driverGamepad.getLeftY()*driveSpeed*opposite);
+    myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed*opposite);
     myDrive.feed();
 
 
