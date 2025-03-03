@@ -97,6 +97,8 @@ public class Robot extends TimedRobot {
 
     driveConfig.encoder.apply(encoderConfig); 
 
+    // driveConfig.idleMode(IdleMode.kBrake); //kBrake or kCoast
+
     driveConfig.smartCurrentLimit(60); //sets amp limit for each motor
     driveConfig.voltageCompensation(12); //sends half of given voltage to motor to help keep driving consistent
 
@@ -145,17 +147,17 @@ public class Robot extends TimedRobot {
   
   private void boostToggle() {
     if (speedRate == 1) {
-      driveSpeed = 0.75;
+      driveSpeed = 0.85;
     }
     else {
-      driveSpeed = 0.50;
+      driveSpeed = 0.75;
     }
   }
 
   private void isClimbing() { //default is false
     climbing = !climbing; //sets climbing to opposite (true for first button press)
     if (climbing == true) { //if climbing is true
-      driveSpeed = 0.25; //lowers drive speed
+      driveSpeed = 0.38; //lowers drive speed
       System.out.println("Climbing mode activated");
     }
     else {
@@ -165,7 +167,7 @@ public class Robot extends TimedRobot {
 
   private void centerCoralAuto() {
     if (step == 1) {
-      controller.setSetpoint(-76);
+      controller.setSetpoint(-73);
       double leftOutput = controller.calculate(leftEncoderPos);
       double rightOutput = controller.calculate(-rightEncoderPos);
       myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller 
@@ -198,7 +200,7 @@ public class Robot extends TimedRobot {
 
   private void leftCoralAuto() {
     if (step == 1) {
-      controller.setSetpoint(-124);
+      controller.setSetpoint(-110);
       double leftOutput = controller.calculate(leftEncoderPos);
       double rightOutput = controller.calculate(-rightEncoderPos);
       myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller 
@@ -363,11 +365,11 @@ public class Robot extends TimedRobot {
     if (driverGamepad.getLeftBumperButtonPressed()) { //toggle
       if (speedRate == 1) {
         speedRate--;
-        System.out.println("Speed is set to %75!");
+        System.out.println("Speed is set to %85!");
       }
       else {
         speedRate++;
-        System.out.println("Speed is set to %50!");
+        System.out.println("Speed is set to %75!");
       }
     }
     
