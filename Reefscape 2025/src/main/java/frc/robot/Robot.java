@@ -11,7 +11,6 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.EncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -22,6 +21,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 
 import edu.wpi.first.math.controller.PIDController;
+
 
 
 /*
@@ -40,7 +40,7 @@ public class Robot extends TimedRobot {
   final SparkMax rollerMotor = new SparkMax(5, MotorType.kBrushless); //creates roller 
   final SparkMax climberMotor = new SparkMax(6, MotorType.kBrushless); //creates climber
 
-  final SparkMax leftLeader = new SparkMax(2, MotorType.kBrushless); //creates sparkmax variables
+  final SparkMax leftLeader = new SparkMax(2, MotorType.kBrushless); //creates wheel variables
   final SparkMax leftFollower = new SparkMax(3, MotorType.kBrushless);
   final SparkMax rightLeader = new SparkMax(1, MotorType.kBrushless);
   final SparkMax rightFollower = new SparkMax(4, MotorType.kBrushless);
@@ -50,7 +50,7 @@ public class Robot extends TimedRobot {
   final SparkMaxConfig driveConfig = new SparkMaxConfig(); //creating setups for wheel, roller, and climber SparkMaxes 
   final SparkMaxConfig rollerConfig = new SparkMaxConfig();
   final SparkMaxConfig climberConfig = new SparkMaxConfig();
-  final EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(2 * Math.PI * 3 / 8.45);
+  final EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(2 * Math.PI * 3 / 8.45); //robot moves 2.23 in per rev
 
   final Timer timer1 = new Timer(); //new timer
   final Timer sleepTime = new Timer();
@@ -74,12 +74,12 @@ public class Robot extends TimedRobot {
   double leftEncoderPos = leftEncoder.getPosition();
   double climberEncoderPos = climberEncoder.getPosition();
 
-  PIDController controller = new PIDController(0.02, 0, 0);
+  PIDController controller = new PIDController(0.02, 0, 0.005);
   double step = 1; //used to determine which step of auto robot is on
 
   boolean safetyBool = true; //safety switch for watchdog/differential drive error
 
-  // double wheelCircumference = Math.PI * 3; //pi * wheel diameter
+  // double wheelCircumference = Math.PI * 3; //pi * wheel diameter //for turning during auto... doesn't seem like it'll be used
 
 
 
@@ -96,8 +96,6 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     driveConfig.encoder.apply(encoderConfig); 
-
-    // driveConfig.idleMode(IdleMode.kBrake); //kBrake or kCoast
 
     driveConfig.smartCurrentLimit(60); //sets amp limit for each motor
     driveConfig.voltageCompensation(12); //sends half of given voltage to motor to help keep driving consistent
@@ -125,9 +123,7 @@ public class Robot extends TimedRobot {
     myDrive.setExpiration(0.5);
 
     //if robot overshoots or jitters near target, increase; if robot stops too far from target, decrease
-    controller.setTolerance(0.0005); //sets tolerance for PID controller which may fix stuttering before setpoint
-
-    // leftLeader.setIdleMode(IdleMode.kBrake); //1 is brake, 0 is coast                                   wasn't working
+    controller.setTolerance(0.75); //adds a little bit of error in case the robot doesn't fully reach setpoint
   } 
 
 
@@ -157,7 +153,7 @@ public class Robot extends TimedRobot {
   private void isClimbing() { //default is false
     climbing = !climbing; //sets climbing to opposite (true for first button press)
     if (climbing == true) { //if climbing is true
-      driveSpeed = 0.38; //lowers drive speed
+      driveSpeed = 0.4; //lowers drive speed
       System.out.println("Climbing mode activated");
     }
     else {
@@ -165,12 +161,22 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private void centerCoralAuto() {
+  private void straightCoralAuto(double distanceToSetpoint) {
     if (step == 1) {
-      controller.setSetpoint(-73);
-      double leftOutput = controller.calculate(leftEncoderPos);
-      double rightOutput = controller.calculate(-rightEncoderPos);
-      myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller 
+      sleepTime.start();
+      if (sleepTime.get() > 8) {
+        step++;
+        sleepTime.stop();
+        sleepTime.reset();
+      }
+      myDrive.feed();
+    }
+    else if (step == 2) {
+      controller.setSetpoint(distanceToSetpoint); //setpoint is direction of roller
+      double output = controller.calculate(getEncoderPositions());                           //remove this if auto doesn't work
+      // double leftOutput = controller.calculate(leftEncoderPos);
+      // double rightOutput = controller.calculate(-rightEncoderPos);
+      myDrive.tankDrive(output, -output); //goes in the direction of the roller 
       myDrive.feed();
       sleepTime.start();
       if (controller.atSetpoint() || sleepTime.get() > 3) {
@@ -179,7 +185,7 @@ public class Robot extends TimedRobot {
         sleepTime.reset();
       }
     }
-    else if (step == 2) {
+    else if (step == 3) {
       sleepTime.start();
       myDrive.tankDrive(0, 0); //stop moving
       myDrive.feed();
@@ -198,92 +204,26 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private void leftCoralAuto() {
-    if (step == 1) {
-      controller.setSetpoint(-110);
-      double leftOutput = controller.calculate(leftEncoderPos);
-      double rightOutput = controller.calculate(-rightEncoderPos);
-      myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller 
-      myDrive.feed();
-      sleepTime.start();
-      if (controller.atSetpoint() || sleepTime.get() > 3) {
-        step++;
-        sleepTime.stop();
-        sleepTime.reset();
-      }
-    }
-    else if (step == 2) {
-      sleepTime.start();
-      myDrive.tankDrive(0, 0); //stop moving
-      myDrive.feed();
-      rollerMotor.set(-ROLLER_STRENGTH); //deposit
-      if (sleepTime.get() > 1.5) {
-        step++;
-        rollerMotor.set(0); //stop once the roller has ran for 5 seconds
-        sleepTime.stop();
-        sleepTime.reset();
-      }
-    }
-    else {
-      myDrive.arcadeDrive(0, 0); //stop
-      rollerMotor.set(0);
-      myDrive.feed();
-    }
-  }
-
-  private void rightCoralAuto() {
-    if (step == 1) {
-      controller.setSetpoint(-124);
-      double leftOutput = controller.calculate(leftEncoderPos);
-      double rightOutput = controller.calculate(-rightEncoderPos);
-      myDrive.tankDrive(leftOutput, -rightOutput); //goes in the direction of the roller 
-      myDrive.feed();
-      sleepTime.start();
-      if (controller.atSetpoint() || sleepTime.get() > 3) {
-        step++;
-        sleepTime.stop();
-        sleepTime.reset();
-      }
-    }
-    else if (step == 2) {
-      sleepTime.start();
-      myDrive.tankDrive(0, 0); //stop moving
-      myDrive.feed();
-      rollerMotor.set(-ROLLER_STRENGTH); //deposit
-      if (sleepTime.get() > 1.5) {
-        step++;
-        rollerMotor.set(0); //stop once the roller has ran for 5 seconds
-        sleepTime.stop();
-        sleepTime.reset();
-      }
-    }
-    else {
-      myDrive.arcadeDrive(0, 0); //stop
-      rollerMotor.set(0);
-      myDrive.feed();
-    }
-  }
-
-  private void justDrive() {
-    getEncoderPositions();
-    if (step == 1) {
-      controller.setSetpoint(-100);
-      double output = controller.calculate(getEncoderPositions());
-      myDrive.tankDrive(-output, output); //goes in the direction of the roller
-      myDrive.feed();
-      sleepTime.start();
-      if (controller.atSetpoint() || sleepTime.get() > 3.5) {
-        step++;
-        sleepTime.stop();
-        sleepTime.reset();
-      }
-    }
-    else {
-      myDrive.tankDrive(0, 0);
-      rollerMotor.set(0);
-      myDrive.feed();
-    }
-  }
+  // private void justDrive() {
+  //   getEncoderPositions();
+  //   if (step == 1) {
+  //     controller.setSetpoint(-100);
+  //     double output = controller.calculate(getEncoderPositions());
+  //     myDrive.tankDrive(-output, output); //goes in the direction of the roller
+  //     myDrive.feed();
+  //     sleepTime.start();
+  //     if (controller.atSetpoint() || sleepTime.get() > 3.5) {
+  //       step++;
+  //       sleepTime.stop();
+  //       sleepTime.reset();
+  //     }
+  //   }
+  //   else {
+  //     myDrive.tankDrive(0, 0);
+  //     rollerMotor.set(0);
+  //     myDrive.feed();
+  //   }
+  // }
 
 
 
@@ -329,19 +269,19 @@ public class Robot extends TimedRobot {
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
       default:
-        centerCoralAuto();
+        straightCoralAuto(-76);
         break;
 
       case kRightCoral: //score coral when right side of starting line
-        rightCoralAuto();
+        straightCoralAuto(-110);
         break;
 
       case kLeftCoral: //score coral when left side of starting line
-        leftCoralAuto();
+        straightCoralAuto(-110);
         break;
 
-      case kJustDrive: //get out of starting zone (just in case roller doesn't work) 
-        justDrive();
+      case kJustDrive: //gets out of starting zone
+        straightCoralAuto(-25);
         break;
     }
   }
@@ -350,9 +290,7 @@ public class Robot extends TimedRobot {
 
 //Called once at beginning of teleop period
   @Override
-  public void teleopInit() {
-    resetEncoders();
-  }
+  public void teleopInit() {}
 
 
 
@@ -365,11 +303,11 @@ public class Robot extends TimedRobot {
     if (driverGamepad.getLeftBumperButtonPressed()) { //toggle
       if (speedRate == 1) {
         speedRate--;
-        System.out.println("Speed is set to %85!");
+        System.out.println("Boost is disabled");
       }
       else {
         speedRate++;
-        System.out.println("Speed is set to %75!");
+        System.out.println("Boost is enabled!");
       }
     }
     
@@ -381,13 +319,13 @@ public class Robot extends TimedRobot {
     /*
      * Flip Direction Toggle
      */
-    if (driverGamepad.getRightBumperButtonPressed()) {
+    if (driverGamepad.getRightBumperButtonPressed()) { //mainly used for climbing
       opposite *= -1;
       if (opposite == 1) {
-        System.out.println("Robot is facing backwards!");
+        System.out.println("Climber is forward");
       }
       else {
-        System.out.println("Robot is facing forwards!");
+        System.out.println("Roller is forward");
       }
     }
 
@@ -421,10 +359,10 @@ public class Robot extends TimedRobot {
     }
 
     if (-operatorGamepad.getRightY() < -0.1) { //if joystick is down,
-      climberMotor.set(CLIMBER_STRENGTH); //pull climber
+      climberMotor.set(-CLIMBER_STRENGTH); //pull climber
     }
     else if (-operatorGamepad.getRightY() > 0.1) { //if joystick is up,
-      climberMotor.set(-CLIMBER_STRENGTH); //lower climber
+      climberMotor.set(CLIMBER_STRENGTH); //lower climber
     }
     else {
       climberMotor.set(0);
@@ -435,47 +373,35 @@ public class Robot extends TimedRobot {
 
 //Called once when the robot is disabled
   @Override
-  public void disabledInit() {
-
-  }
+  public void disabledInit() {}
 
 
 
 //Called repeatedly when robot is disabled
   @Override
-  public void disabledPeriodic() {
-
-  }
+  public void disabledPeriodic() {}
 
 
 
   /** This function is called once when test mode is enabled. */
   @Override
-  public void testInit() {
-
-  }
+  public void testInit() {}
 
 
 
   /** This function is called periodically during test mode. */
   @Override
-  public void testPeriodic() {
-
-  }
+  public void testPeriodic() {}
 
 
 
   /** This function is called once when the robot is first started up. */
   @Override
-  public void simulationInit() {
-    
-  }
+  public void simulationInit() {}
 
 
 
   /** This function is called periodically whilst in simulation. */
   @Override
-  public void simulationPeriodic() {
-
-  }
+  public void simulationPeriodic() {}
 }
