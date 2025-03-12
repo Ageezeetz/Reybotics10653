@@ -20,6 +20,8 @@ import edu.wpi.first.wpilibj.Timer;
 
 import edu.wpi.first.wpilibj.XboxController;
 
+import edu.wpi.first.math.controller.PIDController;
+
 
 
 /*
@@ -35,43 +37,49 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  final SparkMax rollerMotor = new SparkMax(5, MotorType.kBrushless); //creates roller variable
+  final SparkMax rollerMotor = new SparkMax(5, MotorType.kBrushless); //creates roller 
+  final SparkMax climberMotor = new SparkMax(6, MotorType.kBrushless); //creates climber
 
-  final SparkMax leftLeader = new SparkMax(2, MotorType.kBrushless); //creates sparkmax variables
+  final SparkMax leftLeader = new SparkMax(2, MotorType.kBrushless); //creates wheel variables
   final SparkMax leftFollower = new SparkMax(3, MotorType.kBrushless);
   final SparkMax rightLeader = new SparkMax(1, MotorType.kBrushless);
   final SparkMax rightFollower = new SparkMax(4, MotorType.kBrushless);
 
   final DifferentialDrive myDrive = new DifferentialDrive(leftLeader, rightLeader); //used for motor calls
 
-  final SparkMaxConfig driveConfig = new SparkMaxConfig(); //creating setups for driving and roller 
+  final SparkMaxConfig driveConfig = new SparkMaxConfig(); //creating setups for wheel, roller, and climber SparkMaxes 
   final SparkMaxConfig rollerConfig = new SparkMaxConfig();
+  final SparkMaxConfig climberConfig = new SparkMaxConfig();
+  final EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(2 * Math.PI * 3 / 8.45); //robot moves 2.23 in per rev
 
   final Timer timer1 = new Timer(); //new timer
+  final Timer sleepTime = new Timer();
 
   final double ROLLER_STRENGTH = 0.25; //variable for roller strength
-  double driveSpeed = 0.5; //variable for drive speed
-  boolean opposite = false; //variable for default robot direction
+  final double CLIMBER_STRENGTH = 0.75; //variable for climber strength
+  double driveSpeed = 0; //variable for boost drive speed
+  double opposite = -1; //variable for default robot direction
   double speedRate = 0;
   double setpoint = 0;
+  boolean climbing = false;
   
   final XboxController driverGamepad = new XboxController(0);
-  final XboxController gamepadOperator = new XboxController(1);
+  final XboxController operatorGamepad = new XboxController(1);
 
   RelativeEncoder leftEncoder = leftLeader.getEncoder();
   RelativeEncoder rightEncoder = rightLeader.getEncoder();
+  RelativeEncoder climberEncoder = climberMotor.getEncoder();
 
   double rightEncoderPos = rightEncoder.getPosition();
   double leftEncoderPos = leftEncoder.getPosition();
-  double encoderPositions = (leftEncoderPos + rightEncoderPos) / 2;
-  double rightEncoderVel = rightEncoder.getVelocity();
-  double leftEncoderVel = leftEncoder.getVelocity();
+  double climberEncoderPos = climberEncoder.getPosition();
 
-  PIDController controller = new PIDController(0.05, 0, 0);
+  PIDController controller = new PIDController(0.02, 0, 0.005);
+  double step = 1; //used to determine which step of auto robot is on
 
-  final double kP = 0.05; //how much power the robot should be using for every tick? based on error (if more error, more kP; if less error, less kP)
-  final double error = setpoint - ((leftEncoderPos + rightEncoderPos) / 2);
-  final double outputSpeed = kP * error;
+  boolean safetyBool = true; //safety switch for watchdog/differential drive error
+
+  // double wheelCircumference = Math.PI * 3; //pi * wheel diameter //for turning during auto... doesn't seem like it'll be used
 
 
 
@@ -87,44 +95,153 @@ public class Robot extends TimedRobot {
 
     SmartDashboard.putData("Auto choices", m_chooser);
 
+    driveConfig.encoder.apply(encoderConfig); 
+
     driveConfig.smartCurrentLimit(60); //sets amp limit for each motor
     driveConfig.voltageCompensation(12); //sends half of given voltage to motor to help keep driving consistent
 
     driveConfig.follow(leftLeader); //sets backleft motor to match top left motor
-    leftFollower.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //motor 3
+    leftFollower.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures back left motor
 
     driveConfig.follow(rightLeader); //sets backright motor to match top right motor
-    rightFollower.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //motor 4
+    rightFollower.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures back right motor
 
     driveConfig.disableFollowerMode();
-    rightLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //motor 1
-    leftLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //motor 2
+    rightLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures front right motor
+    leftLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures front left motor
     driveConfig.inverted(true); //flips motor number values
 
     rollerConfig.smartCurrentLimit(60);
     rollerConfig.voltageCompensation(10);
     rollerMotor.configure(rollerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    timer1.start(); //starts timer
+    climberConfig.smartCurrentLimit(60);
+    climberConfig.voltageCompensation(10);
+    climberMotor.configure(climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    // 2 * PI * wheel radius in centimeters / gearing
-    EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(kDefaultPeriod);
-    driveConfig.encoder.apply(encoderConfig);
+    myDrive.setSafetyEnabled(safetyBool);
+    myDrive.setExpiration(0.5);
 
-    System.out.println("Robot started!");
+    //if robot overshoots or jitters near target, increase; if robot stops too far from target, decrease
+    controller.setTolerance(0.75); //adds a little bit of error in case the robot doesn't fully reach setpoint
+  } 
+
+
+
+  /*
+   * Functions
+   */
+  private double getEncoderPositions() {
+    return (leftEncoder.getPosition() + -(rightEncoder.getPosition())) / 2;
   }
+
+  private void resetEncoders() {
+    leftEncoder.setPosition(0);
+    rightEncoder.setPosition(0);
+    climberEncoder.setPosition(0);
+  }
+  
+  private void boostToggle() {
+    if (speedRate == 1) {
+      driveSpeed = 0.85;
+    }
+    else {
+      driveSpeed = 0.75;
+    }
+  }
+
+  private void isClimbing() { //default is false
+    climbing = !climbing; //sets climbing to opposite (true for first button press)
+    if (climbing == true) { //if climbing is true
+      driveSpeed = 0.4; //lowers drive speed
+      System.out.println("Climbing mode activated");
+    }
+    else {
+      System.out.println("Climbing mode is not activated");
+    }
+  }
+
+  private void straightCoralAuto(double distanceToSetpoint) {
+    if (step == 1) {
+      sleepTime.start();
+      if (sleepTime.get() > 8) {
+        step++;
+        sleepTime.stop();
+        sleepTime.reset();
+      }
+      myDrive.feed();
+    }
+    else if (step == 2) {
+      controller.setSetpoint(distanceToSetpoint); //setpoint is direction of roller
+      double output = controller.calculate(getEncoderPositions());                           //remove this if auto doesn't work
+      // double leftOutput = controller.calculate(leftEncoderPos);
+      // double rightOutput = controller.calculate(-rightEncoderPos);
+      myDrive.tankDrive(output, -output); //goes in the direction of the roller 
+      myDrive.feed();
+      sleepTime.start();
+      if (controller.atSetpoint() || sleepTime.get() > 3) {
+        step++;
+        sleepTime.stop();
+        sleepTime.reset();
+      }
+    }
+    else if (step == 3) {
+      sleepTime.start();
+      myDrive.tankDrive(0, 0); //stop moving
+      myDrive.feed();
+      rollerMotor.set(-ROLLER_STRENGTH); //deposit
+      if (sleepTime.get() > 1.5) {
+        step++;
+        rollerMotor.set(0); //stop once the roller has ran for 5 seconds
+        sleepTime.stop();
+        sleepTime.reset();
+      }
+    }
+    else {
+      myDrive.arcadeDrive(0, 0); //stop
+      rollerMotor.set(0);
+      myDrive.feed();
+    }
+  }
+
+  // private void justDrive() {
+  //   getEncoderPositions();
+  //   if (step == 1) {
+  //     controller.setSetpoint(-100);
+  //     double output = controller.calculate(getEncoderPositions());
+  //     myDrive.tankDrive(-output, output); //goes in the direction of the roller
+  //     myDrive.feed();
+  //     sleepTime.start();
+  //     if (controller.atSetpoint() || sleepTime.get() > 3.5) {
+  //       step++;
+  //       sleepTime.stop();
+  //       sleepTime.reset();
+  //     }
+  //   }
+  //   else {
+  //     myDrive.tankDrive(0, 0);
+  //     rollerMotor.set(0);
+  //     myDrive.feed();
+  //   }
+  // }
 
 
 
   @Override
   public void robotPeriodic() {
+    leftEncoderPos = leftEncoder.getPosition();
+    rightEncoderPos = rightEncoder.getPosition();
+
+    getEncoderPositions();
+
     /*
      * Prints
      */
-    // SmartDashboard.putNumber("Left Encoder Position", leftEncoderPos);
-    // SmartDashboard.putNumber("Right Encoder Position", rightEncoderPos);
-    // SmartDashboard.putNumber("Left Encoder Velocty", leftEncoder.getVelocity());
-    // SmartDashboard.putNumber("Right Encoder Velocity", rightEncoder.getVelocity());
+    SmartDashboard.putNumber("Left Encoder Position", leftEncoder.getPosition()); //left encoder
+    SmartDashboard.putNumber("Right Encoder Position", -(rightEncoder.getPosition())); //right encoder
+    SmartDashboard.putNumber("Encoder Positions", getEncoderPositions()); //average of both encoders
+    SmartDashboard.putNumber("PID Output", controller.calculate(getEncoderPositions())); //power output of PID
+    SmartDashboard.putBoolean("Controller at Target", controller.atSetpoint()); //true or false
   }
 
 
@@ -135,16 +252,12 @@ public class Robot extends TimedRobot {
     //m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
 
-    timer1.restart();
+    timer1.reset();
+    sleepTime.reset();
+    timer1.start();
 
-    double step = 0; //used to determine which step of auto robot is on
-    leftEncoderPos.set(0);
-    rightEncoderPos.set(0);
-    encoderPositions.set(0);
-
-    double atDestination = controller.atSetpoint();
-    double distance = controller.setpoint;
-  }
+    resetEncoders();
+    }
 
 
 
@@ -155,78 +268,20 @@ public class Robot extends TimedRobot {
     */
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
-        step++;
-        if (atDestination() && distance != 0) {
-          step++;
-        }
-        if (step == 1) {
-          distance = 1; //change to distance from starting line to reef
-          while (!atDestination()) {
-            double output = controller.calculate(encoderPositions, SETPOINT);
-            myDrive.arcadeDrive(output, 0);
-          }
-        }
-        else if (step == 2) {
-          rollerMotor.set(-ROLLER_STRENGTH); //deposit
-          sleep(500);
-          step++;
-        }
-        else {
-          myDrive.arcadeDrive(0, 0); //stop
-          rollerMotor.set(0);
-        }
+      default:
+        straightCoralAuto(-76);
         break;
-      
 
       case kRightCoral: //score coral when right side of starting line
-        if (timer1.get() < 1.5) { //drive forward
-          myDrive.tankDrive(0.5, -0.5);
-        }
-        else if (timer1.get() < 2) { //rotate left
-          myDrive.tankDrive(-0.5, 0.5);
-        }
-        else if (timer1.get() < 2.4) { //drive to reef
-          myDrive.tankDrive(0.5, 0.5);
-        }
-        else if (timer1.get() < 2.8) { //deposit coral
-          rollerMotor.set(ROLLER_STRENGTH);
-        }
-        else { //stop all
-          myDrive.tankDrive(0, 0);
-          rollerMotor.set(0);
-        }
+        straightCoralAuto(-110);
         break;
 
       case kLeftCoral: //score coral when left side of starting line
-      if (timer1.get() < 1.5) { //drive forward
-        myDrive.tankDrive(0.5, 0.5);
-      }
-      else if (timer1.get() < 2) { //rotate right
-        myDrive.tankDrive(0.5, -0.5);
-      }
-      else if (timer1.get() < 2.4) { //drive to reef
-        myDrive.tankDrive(0.5, 0.5);
-      }
-      else if (timer1.get() < 2.8) { //deposit coral
-        rollerMotor.set(ROLLER_STRENGTH);
-      }
-      else { //stop all
-        myDrive.tankDrive(0, 0);
-        rollerMotor.set(0);
-      }
-      break;
+        straightCoralAuto(-110);
+        break;
 
-      case kJustDrive: //get out of starting zone 
-        if (timer1.get() < 0.9) { //drive forward
-          myDrive.tankDrive(0.5, 0.5);
-        }
-        else { //stop all 
-          myDrive.tankDrive(0, 0);
-        }
-
-      case kDefaultAuto:
-      default:
-        myDrive.tankDrive(0.1, 0.1);
+      case kJustDrive: //gets out of starting zone
+        straightCoralAuto(-25);
         break;
     }
   }
@@ -235,11 +290,7 @@ public class Robot extends TimedRobot {
 
 //Called once at beginning of teleop period
   @Override
-  public void teleopInit() {
-    leftEncoderPos.set(0);
-    rightEncoderPos.set(0);
-    encoderPositions.set(0);
-  }
+  public void teleopInit() {}
 
 
 
@@ -252,118 +303,105 @@ public class Robot extends TimedRobot {
     if (driverGamepad.getLeftBumperButtonPressed()) { //toggle
       if (speedRate == 1) {
         speedRate--;
+        System.out.println("Boost is disabled");
       }
       else {
         speedRate++;
+        System.out.println("Boost is enabled!");
       }
     }
-    if (speedRate == 1) { //speed change
-      driveSpeed = 0.75;
-    }
-    else {
-      driveSpeed = 0.5;
+    
+    if (!climbing) {
+      boostToggle(); //speed change if not climbing
     }
 
 
     /*
      * Flip Direction Toggle
      */
-    if (driverGamepad.getRightBumperButtonPressed()) {
-      if (opposite == false) {
-        opposite = true;
+    if (driverGamepad.getRightBumperButtonPressed()) { //mainly used for climbing
+      opposite *= -1;
+      if (opposite == 1) {
+        System.out.println("Climber is forward");
       }
       else {
-        opposite = false;
+        System.out.println("Roller is forward");
       }
-
-
-    //Uncomment below for tank style controls
-    // if (opposite == true) {
-    //   myDrive.tankDrive(driverGamepad.getLeftY()*driveSpeed, -driverGamepad.getRightY()*driveSpeed);
-    // }
-    // else {
-    //   myDrive.tankDrive(-driverGamepad.getLeftY()*driveSpeed, driverGamepad.getRightY()*driveSpeed);
-    // }
-
-    //Uncomment below for arcade style controls
-    if (opposite == true) {
-      myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, -driverGamepad.getLeftY()*driveSpeed);
     }
-    else {
-      myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed);
-    }
-
-    //Uncomment below for single joystick controls (left joystick)
-    // if (opposite == true) {
-    //   myDrive.arcadeDrive(driverGamepad.getLeftX()*driveSpeed/1.25, -driverGamepad.getLeftY()*driveSpeed);
-    // }
-    // else {
-    //   myDrive.arcadeDrive(driverGamepad.getLeftX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed);
-    // }
-    
 
 
     /*
-     * Operator Controls
+     * Drive Controls
      */
-    if (gamepadOperator.getPOV() == 180) { //bottom D-pad button pressed
+    myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed*opposite);
+    myDrive.feed();
+
+
+    /*
+     * Roller Controls
+     */
+    if (operatorGamepad.getPOV() == 180) { //bottom D-pad button pressed
       rollerMotor.set(ROLLER_STRENGTH); //roll in
     }
-    else if (gamepadOperator.getPOV() == 0) { //top D-pad button pressed
+    else if (operatorGamepad.getPOV() == 0) { //top D-pad button pressed
       rollerMotor.set(-ROLLER_STRENGTH); //roll out
     }
     else {
       rollerMotor.set(0);
     }
+
+    
+    /*
+     * Climber Controls
+     */
+    if (operatorGamepad.getAButtonPressed()) {
+      isClimbing();
+    }
+
+    if (-operatorGamepad.getRightY() < -0.1) { //if joystick is down,
+      climberMotor.set(-CLIMBER_STRENGTH); //pull climber
+    }
+    else if (-operatorGamepad.getRightY() > 0.1) { //if joystick is up,
+      climberMotor.set(CLIMBER_STRENGTH); //lower climber
+    }
+    else {
+      climberMotor.set(0);
+    }
   }
-}
 
 
 
 //Called once when the robot is disabled
   @Override
-  public void disabledInit() {
-    myDrive.tankDrive(0, 0);
-    rollerMotor.set(0);
-  }
+  public void disabledInit() {}
 
 
 
 //Called repeatedly when robot is disabled
   @Override
-  public void disabledPeriodic() {
-
-  }
+  public void disabledPeriodic() {}
 
 
 
   /** This function is called once when test mode is enabled. */
   @Override
-  public void testInit() {
-
-  }
+  public void testInit() {}
 
 
 
   /** This function is called periodically during test mode. */
   @Override
-  public void testPeriodic() {
-
-  }
+  public void testPeriodic() {}
 
 
 
   /** This function is called once when the robot is first started up. */
   @Override
-  public void simulationInit() {
-
-  }
+  public void simulationInit() {}
 
 
 
   /** This function is called periodically whilst in simulation. */
   @Override
-  public void simulationPeriodic() {
-    
-  }
+  public void simulationPeriodic() {}
 }
