@@ -30,7 +30,8 @@ import edu.wpi.first.math.controller.PIDController;
 // If the name of this public class is changed, remember to change as well in the Main.java file
 public class Robot extends TimedRobot {
   private static final String kDefaultAuto = "Default";
-  private static final String kCenterCoral = "Center and Coral"; //custom modes for SmartDashboard
+  //custom modes for SmartDashboard
+  private static final String kCenterCoral = "Center and Coral";
   private static final String kJustDrive = "Only Drive";
   private static final String kRightCoral = "Right Side Coral";
   private static final String kLeftCoral = "Left Side Coral";
@@ -39,6 +40,8 @@ public class Robot extends TimedRobot {
 
   final SparkMax rollerMotor = new SparkMax(5, MotorType.kBrushless); //creates roller 
   final SparkMax climberMotor = new SparkMax(6, MotorType.kBrushless); //creates climber
+  final SparkMax algaeMotor = new SparkMax(7, MotorType.kBrushed); //creates algae
+  final SparkMax algaeWheels = new SparkMax(8, MotorType.kBrushed); //creates algae wheels
 
   final SparkMax leftLeader = new SparkMax(2, MotorType.kBrushless); //creates wheel variables
   final SparkMax leftFollower = new SparkMax(3, MotorType.kBrushless);
@@ -50,18 +53,22 @@ public class Robot extends TimedRobot {
   final SparkMaxConfig driveConfig = new SparkMaxConfig(); //creating setups for wheel, roller, and climber SparkMaxes 
   final SparkMaxConfig rollerConfig = new SparkMaxConfig();
   final SparkMaxConfig climberConfig = new SparkMaxConfig();
+  final SparkMaxConfig algaeConfig = new SparkMaxConfig();
   final EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(2 * Math.PI * 3 / 8.45); //robot moves 2.23 in per rev
 
   final Timer timer1 = new Timer(); //new timer
   final Timer sleepTime = new Timer();
 
-  final double ROLLER_STRENGTH = 0.25; //variable for roller strength
+  final double ROLLER_SPEED = 0.25; //variable for roller strength
   final double CLIMBER_STRENGTH = 0.75; //variable for climber strength
+  final double ALGAE_STRENGTH = 0.75; //variable for algae speed when pulling/releasing
+  final double ALGAE_WHEEL_STRENGTH = 0.25; //variable for algae wheel speed
   double driveSpeed = 0; //variable for boost drive speed
   double opposite = -1; //variable for default robot direction
   double speedRate = 0;
   double setpoint = 0;
   boolean climbing = false;
+  String algaeIntakeDirection = "down";
   
   final XboxController driverGamepad = new XboxController(0);
   final XboxController operatorGamepad = new XboxController(1);
@@ -69,10 +76,13 @@ public class Robot extends TimedRobot {
   RelativeEncoder leftEncoder = leftLeader.getEncoder();
   RelativeEncoder rightEncoder = rightLeader.getEncoder();
   RelativeEncoder climberEncoder = climberMotor.getEncoder();
+  RelativeEncoder algaeEncoder = algaeMotor.getEncoder();
+  RelativeEncoder algaeWheelEncoder = algaeWheels.getEncoder();
 
   double rightEncoderPos = rightEncoder.getPosition();
   double leftEncoderPos = leftEncoder.getPosition();
   double climberEncoderPos = climberEncoder.getPosition();
+  double algaeEncoderPos = algaeEncoder.getPosition();
 
   PIDController controller = new PIDController(0.02, 0, 0.005);
   double step = 1; //used to determine which step of auto robot is on
@@ -96,6 +106,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     driveConfig.encoder.apply(encoderConfig); 
+    algaeConfig.encoder.apply(encoderConfig);
 
     driveConfig.smartCurrentLimit(60); //sets amp limit for each motor
     driveConfig.voltageCompensation(12); //sends half of given voltage to motor to help keep driving consistent
@@ -113,11 +124,16 @@ public class Robot extends TimedRobot {
 
     rollerConfig.smartCurrentLimit(60);
     rollerConfig.voltageCompensation(10);
-    rollerMotor.configure(rollerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    rollerMotor.configure(rollerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures roller motor
 
     climberConfig.smartCurrentLimit(60);
     climberConfig.voltageCompensation(10);
-    climberMotor.configure(climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    climberMotor.configure(climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures climber motor
+
+    algaeConfig.smartCurrentLimit(60);
+    algaeConfig.voltageCompensation(10);
+    algaeMotor.configure(algaeConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures algae motor
+    algaeWheels.configure(algaeConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures algae wheel motor
 
     myDrive.setSafetyEnabled(safetyBool);
     myDrive.setExpiration(0.5);
@@ -173,9 +189,7 @@ public class Robot extends TimedRobot {
     }
     else if (step == 2) {
       controller.setSetpoint(distanceToSetpoint); //setpoint is direction of roller
-      double output = controller.calculate(getEncoderPositions());                           //remove this if auto doesn't work
-      // double leftOutput = controller.calculate(leftEncoderPos);
-      // double rightOutput = controller.calculate(-rightEncoderPos);
+      double output = controller.calculate(getEncoderPositions());
       myDrive.tankDrive(output, -output); //goes in the direction of the roller 
       myDrive.feed();
       sleepTime.start();
@@ -189,7 +203,7 @@ public class Robot extends TimedRobot {
       sleepTime.start();
       myDrive.tankDrive(0, 0); //stop moving
       myDrive.feed();
-      rollerMotor.set(-ROLLER_STRENGTH); //deposit
+      rollerMotor.set(-ROLLER_SPEED); //deposit
       if (sleepTime.get() > 1.5) {
         step++;
         rollerMotor.set(0); //stop once the roller has ran for 5 seconds
@@ -204,36 +218,31 @@ public class Robot extends TimedRobot {
     }
   }
 
-  // private void justDrive() {
-  //   getEncoderPositions();
-  //   if (step == 1) {
-  //     controller.setSetpoint(-100);
-  //     double output = controller.calculate(getEncoderPositions());
-  //     myDrive.tankDrive(-output, output); //goes in the direction of the roller
-  //     myDrive.feed();
-  //     sleepTime.start();
-  //     if (controller.atSetpoint() || sleepTime.get() > 3.5) {
-  //       step++;
-  //       sleepTime.stop();
-  //       sleepTime.reset();
-  //     }
-  //   }
-  //   else {
-  //     myDrive.tankDrive(0, 0);
-  //     rollerMotor.set(0);
-  //     myDrive.feed();
-  //   }
-  // }
+  private void algaeIntakeMovement() {
+    if (algaeIntakeDirection.equals("down")) { //if algae intake is up
+      if (algaeEncoderPos != 10) { //if it has not gone down
+        algaeMotor.set(ALGAE_STRENGTH); //roll down
+      }
+      else if (algaeEncoderPos >= 10) { //if it fully down
+        algaeMotor.set(0); //stop
+        algaeIntakeDirection = "up"; //switch direction
+      }
+    }
+    else if (algaeIntakeDirection.equals("up")) { //if algae intake is down
+      if (algaeEncoderPos != 0) { //if it is not fully up
+        algaeMotor.set(ALGAE_STRENGTH); //roll up
+      }
+      else if (algaeEncoderPos <= 0) { //if it is fully up
+        algaeMotor.set(0); //stop
+        algaeIntakeDirection = "down"; //switch direction
+      }
+    }
+  }
 
 
 
   @Override
   public void robotPeriodic() {
-    leftEncoderPos = leftEncoder.getPosition();
-    rightEncoderPos = rightEncoder.getPosition();
-
-    getEncoderPositions();
-
     /*
      * Prints
      */
@@ -242,6 +251,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Encoder Positions", getEncoderPositions()); //average of both encoders
     SmartDashboard.putNumber("PID Output", controller.calculate(getEncoderPositions())); //power output of PID
     SmartDashboard.putBoolean("Controller at Target", controller.atSetpoint()); //true or false
+    SmartDashboard.putNumber("Algae Intake Position", algaeEncoder.getPosition()); //algae intake encoder value
   }
 
 
@@ -266,6 +276,14 @@ public class Robot extends TimedRobot {
     /*
     * Selections for auto modes \o/
     */
+    if (algaeEncoderPos > 0) { //if algae intake is out, reel it back in to protect from hits
+      algaeMotor.set(ALGAE_STRENGTH); //roll in
+    }
+    else { //if algae intake is in
+      algaeMotor.set(0); //stop
+    }
+    
+
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
       case kCenterCoral: //score coral when center of starting line
       default:
@@ -298,29 +316,31 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     /*
-    * Boost Toggle
-    */
-    if (driverGamepad.getLeftBumperButtonPressed()) { //toggle
-      if (speedRate == 1) {
-        speedRate--;
+     * Boost Toggle
+     */
+    if (driverGamepad.getLeftBumperButtonPressed()) { //if left bumper is pressed
+      if (speedRate == 1) { //if speedrate is 1
+        speedRate--; //disable boost
         System.out.println("Boost is disabled");
       }
-      else {
-        speedRate++;
+      else { //if speedrate is 0
+        speedRate++; //enable boost
         System.out.println("Boost is enabled!");
       }
     }
-    
-    if (!climbing) {
-      boostToggle(); //speed change if not climbing
+
+    if (!climbing) { //if climbing mode is not turned on
+      boostToggle(); //do normal speed based on boost
     }
 
 
     /*
      * Flip Direction Toggle
      */
-    if (driverGamepad.getRightBumperButtonPressed()) { //mainly used for climbing
-      opposite *= -1;
+    if (driverGamepad.getRightBumperButtonPressed()) { //if right bumper is pressed
+      opposite *= -1; //used to reverse robot drive direction (inverts opposite)
+
+      //random prints
       if (opposite == 1) {
         System.out.println("Climber is forward");
       }
@@ -331,33 +351,30 @@ public class Robot extends TimedRobot {
 
 
     /*
-     * Drive Controls
-     */
-    myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed*opposite);
-    myDrive.feed();
-
-
-    /*
      * Roller Controls
      */
     if (operatorGamepad.getPOV() == 180) { //bottom D-pad button pressed
-      rollerMotor.set(ROLLER_STRENGTH); //roll in
+      rollerMotor.set(ROLLER_SPEED); //roll in
     }
     else if (operatorGamepad.getPOV() == 0) { //top D-pad button pressed
-      rollerMotor.set(-ROLLER_STRENGTH); //roll out
+      rollerMotor.set(-ROLLER_SPEED); //roll out
     }
     else {
       rollerMotor.set(0);
     }
 
-    
+
     /*
-     * Climber Controls
+     * Climber Mode
      */
-    if (operatorGamepad.getAButtonPressed()) {
-      isClimbing();
+    if (operatorGamepad.getAButtonPressed()) { //if A button is pressed
+      isClimbing(); //slows down speed
     }
 
+
+    /*
+    * Climber Controls
+    */
     if (-operatorGamepad.getRightY() < -0.1) { //if joystick is down,
       climberMotor.set(-CLIMBER_STRENGTH); //pull climber
     }
@@ -367,8 +384,36 @@ public class Robot extends TimedRobot {
     else {
       climberMotor.set(0);
     }
-  }
 
+
+    /*
+    * Algae Intake Movement Controls
+    */
+    if (operatorGamepad.getYButtonPressed()) { //if Y button is pressed
+      algaeIntakeMovement(); //do algae intake function
+    }
+
+
+    /*
+     * Algae Wheel Controls
+     */
+    if (operatorGamepad.getRightTriggerAxis() >= 0.1) { //if the right trigger is pressed
+      algaeWheels.set(-ALGAE_WHEEL_STRENGTH); //push out algae
+    }
+    else if (operatorGamepad.getLeftTriggerAxis() >= 0.1) { //if left trigger is pressed
+      algaeWheels.set(ALGAE_WHEEL_STRENGTH); //suck in algae
+    }
+    else { //if nothing is pressed
+      algaeWheels.set(0); //stop wheels
+    }
+
+
+    /*
+     * Drive Controls
+     */
+    myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed*opposite);
+    myDrive.feed();
+  }
 
 
 //Called once when the robot is disabled
