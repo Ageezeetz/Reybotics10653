@@ -40,8 +40,8 @@ public class Robot extends TimedRobot {
 
   final SparkMax rollerMotor = new SparkMax(5, MotorType.kBrushless); //creates roller 
   final SparkMax climberMotor = new SparkMax(6, MotorType.kBrushless); //creates climber
-  final SparkMax algaeMotor = new SparkMax(7, MotorType.kBrushed); //creates algae
-  final SparkMax algaeWheels = new SparkMax(8, MotorType.kBrushed); //creates algae wheels
+  // final SparkMax algaeMotor = new SparkMax(7, MotorType.kBrushed); //creates algae
+  // final SparkMax algaeWheels = new SparkMax(8, MotorType.kBrushed); //creates algae wheels
 
   final SparkMax leftLeader = new SparkMax(2, MotorType.kBrushless); //creates wheel variables
   final SparkMax leftFollower = new SparkMax(3, MotorType.kBrushless);
@@ -53,7 +53,7 @@ public class Robot extends TimedRobot {
   final SparkMaxConfig driveConfig = new SparkMaxConfig(); //creating setups for wheel, roller, and climber SparkMaxes 
   final SparkMaxConfig rollerConfig = new SparkMaxConfig();
   final SparkMaxConfig climberConfig = new SparkMaxConfig();
-  final SparkMaxConfig algaeConfig = new SparkMaxConfig();
+  // final SparkMaxConfig algaeConfig = new SparkMaxConfig();
   final EncoderConfig encoderConfig = new EncoderConfig().positionConversionFactor(2 * Math.PI * 3 / 8.45); //robot moves 2.23 in per rev
 
   final Timer timer1 = new Timer(); //new timer
@@ -61,35 +61,37 @@ public class Robot extends TimedRobot {
 
   final double ROLLER_SPEED = 0.25; //variable for roller strength
   final double CLIMBER_STRENGTH = 0.75; //variable for climber strength
-  final double ALGAE_STRENGTH = 0.75; //variable for algae speed when pulling/releasing
-  final double ALGAE_WHEEL_STRENGTH = 0.25; //variable for algae wheel speed
+  // final double ALGAE_STRENGTH = 0.75; //variable for algae speed when pulling/releasing
+  // final double ALGAE_WHEEL_STRENGTH = 0.25; //variable for algae wheel speed
   double driveSpeed = 0; //variable for boost drive speed
   double opposite = -1; //variable for default robot direction
   double speedRate = 0;
   double setpoint = 0;
   boolean climbing = false;
-  String algaeIntakeDirection = "down";
+  // boolean algaeMovementCheck = false;
+  // boolean algaeMovementY = false;
+  // boolean algaeMovementA = false;
   
+
+
   final XboxController driverGamepad = new XboxController(0);
   final XboxController operatorGamepad = new XboxController(1);
 
   RelativeEncoder leftEncoder = leftLeader.getEncoder();
   RelativeEncoder rightEncoder = rightLeader.getEncoder();
   RelativeEncoder climberEncoder = climberMotor.getEncoder();
-  RelativeEncoder algaeEncoder = algaeMotor.getEncoder();
-  RelativeEncoder algaeWheelEncoder = algaeWheels.getEncoder();
+  // RelativeEncoder algaeEncoder = algaeMotor.getEncoder();
+  // RelativeEncoder algaeWheelEncoder = algaeWheels.getEncoder();
 
   double rightEncoderPos = rightEncoder.getPosition();
   double leftEncoderPos = leftEncoder.getPosition();
   double climberEncoderPos = climberEncoder.getPosition();
-  double algaeEncoderPos = algaeEncoder.getPosition();
+  // double algaeEncoderPos = algaeEncoder.getPosition();
 
   PIDController controller = new PIDController(0.02, 0, 0.005);
   double step = 1; //used to determine which step of auto robot is on
 
   boolean safetyBool = true; //safety switch for watchdog/differential drive error
-
-  // double wheelCircumference = Math.PI * 3; //pi * wheel diameter //for turning during auto... doesn't seem like it'll be used
 
 
 
@@ -106,7 +108,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     driveConfig.encoder.apply(encoderConfig); 
-    algaeConfig.encoder.apply(encoderConfig);
+    // algaeConfig.encoder.apply(encoderConfig);
 
     driveConfig.smartCurrentLimit(60); //sets amp limit for each motor
     driveConfig.voltageCompensation(12); //sends half of given voltage to motor to help keep driving consistent
@@ -130,10 +132,10 @@ public class Robot extends TimedRobot {
     climberConfig.voltageCompensation(10);
     climberMotor.configure(climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures climber motor
 
-    algaeConfig.smartCurrentLimit(60);
-    algaeConfig.voltageCompensation(10);
-    algaeMotor.configure(algaeConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures algae motor
-    algaeWheels.configure(algaeConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures algae wheel motor
+    // algaeConfig.smartCurrentLimit(60);
+    // algaeConfig.voltageCompensation(10);
+    // algaeMotor.configure(algaeConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures algae motor
+    // algaeWheels.configure(algaeConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters); //configures algae wheel motor
 
     myDrive.setSafetyEnabled(safetyBool);
     myDrive.setExpiration(0.5);
@@ -159,21 +161,10 @@ public class Robot extends TimedRobot {
   
   private void boostToggle() {
     if (speedRate == 1) {
+      driveSpeed = 0.95;
+    }
+    else {
       driveSpeed = 0.85;
-    }
-    else {
-      driveSpeed = 0.75;
-    }
-  }
-
-  private void isClimbing() { //default is false
-    climbing = !climbing; //sets climbing to opposite (true for first button press)
-    if (climbing == true) { //if climbing is true
-      driveSpeed = 0.4; //lowers drive speed
-      System.out.println("Climbing mode activated");
-    }
-    else {
-      System.out.println("Climbing mode is not activated");
     }
   }
 
@@ -218,26 +209,63 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private void algaeIntakeMovement() {
-    if (algaeIntakeDirection.equals("down")) { //if algae intake is up
-      if (algaeEncoderPos != 10) { //if it has not gone down
-        algaeMotor.set(ALGAE_STRENGTH); //roll down
-      }
-      else if (algaeEncoderPos >= 10) { //if it fully down
-        algaeMotor.set(0); //stop
-        algaeIntakeDirection = "up"; //switch direction
-      }
-    }
-    else if (algaeIntakeDirection.equals("up")) { //if algae intake is down
-      if (algaeEncoderPos != 0) { //if it is not fully up
-        algaeMotor.set(ALGAE_STRENGTH); //roll up
-      }
-      else if (algaeEncoderPos <= 0) { //if it is fully up
-        algaeMotor.set(0); //stop
-        algaeIntakeDirection = "down"; //switch direction
-      }
-    }
-  }
+  // private void algaeIntakeMovement() {
+  //   if (operatorGamepad.getYButtonPressed()) {
+  //     algaeMovementY = true;
+  //   }
+  //   else if (operatorGamepad.getAButtonPressed()) {
+  //     algaeMovementA = true;
+  //   }
+
+  //   if (algaeMovementY) {
+  //     if (algaeEncoderPos != 10) { //if intake has not gone down
+  //       algaeMotor.set(ALGAE_STRENGTH); //roll down
+  //     }
+  //     else if (algaeEncoderPos >= 10) { //if intake is down or lower
+  //       algaeMotor.set(0); //stop
+  //       algaeMovementY = false;
+  //     }
+  //     if (operatorGamepad.getAButtonPressed()) {
+  //       algaeMovementY = false;
+  //     }
+  //   }
+  //   if (algaeMovementA) {
+  //     if (algaeEncoderPos != 0) { //if intake is not fully up
+  //       algaeMotor.set(-ALGAE_STRENGTH); //roll up
+  //     }
+  //     else if (algaeEncoderPos <= 0) { //else if intake is fully up or more
+  //       algaeMotor.set(0); //stop
+  //       algaeMovementA = false;
+  //     }
+  //     if (operatorGamepad.getYButtonPressed()) {
+  //       algaeMovementA = false;
+  //     }
+  //   }
+  // }
+
+
+
+  //   if (operatorGamepad.getYButtonPressed()) {
+  //     // if (algaeIntakeDirection.equals("up")) { //if algae intake is up
+  //       if (algaeEncoderPos != 10) { //if intake has not gone down
+  //         algaeMotor.set(ALGAE_STRENGTH); //roll down
+  //       }
+  //       else if (algaeEncoderPos >= 10) { //else if intake is down or lower
+  //         algaeMotor.set(0); //stop
+  //       }
+  //     // }
+  //   }
+  //   else if (operatorGamepad.getAButtonPressed()) {
+  //     // if (algaeIntakeDirection.equals("down")) { //if algae intake is down
+  //       if (algaeEncoderPos != 0) { //if intake is not fully up
+  //         algaeMotor.set(-ALGAE_STRENGTH); //roll up
+  //       }
+  //       else if (algaeEncoderPos <= 0) { //else if intake is fully up or more
+  //         algaeMotor.set(0); //stop
+  //       }
+  //     // }
+  //   }
+  // }
 
 
 
@@ -251,7 +279,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Encoder Positions", getEncoderPositions()); //average of both encoders
     SmartDashboard.putNumber("PID Output", controller.calculate(getEncoderPositions())); //power output of PID
     SmartDashboard.putBoolean("Controller at Target", controller.atSetpoint()); //true or false
-    SmartDashboard.putNumber("Algae Intake Position", algaeEncoder.getPosition()); //algae intake encoder value
+    // SmartDashboard.putNumber("Algae Intake Position", algaeEncoder.getPosition()); //algae intake encoder value
   }
 
 
@@ -276,12 +304,12 @@ public class Robot extends TimedRobot {
     /*
     * Selections for auto modes \o/
     */
-    if (algaeEncoderPos > 0) { //if algae intake is out, reel it back in to protect from hits
-      algaeMotor.set(ALGAE_STRENGTH); //roll in
-    }
-    else { //if algae intake is in
-      algaeMotor.set(0); //stop
-    }
+    // if (algaeEncoderPos > 0) { //if algae intake is out, reel it back in to protect from hits
+    //   algaeMotor.set(ALGAE_STRENGTH); //roll in
+    // }
+    // else { //if algae intake is in
+    //   algaeMotor.set(0); //stop
+    // }
     
 
     switch (m_autoSelected) { //allows switching between modes in SmartDashboard
@@ -291,11 +319,12 @@ public class Robot extends TimedRobot {
         break;
 
       case kRightCoral: //score coral when right side of starting line
-        straightCoralAuto(-110);
+      // default:
+        straightCoralAuto(-125); //prolly 150
         break;
 
       case kLeftCoral: //score coral when left side of starting line
-        straightCoralAuto(-110);
+        straightCoralAuto(-125); //prolly 150
         break;
 
       case kJustDrive: //gets out of starting zone
@@ -316,7 +345,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     /*
-     * Boost Toggle
+     * Speed Change
      */
     if (driverGamepad.getLeftBumperButtonPressed()) { //if left bumper is pressed
       if (speedRate == 1) { //if speedrate is 1
@@ -329,9 +358,8 @@ public class Robot extends TimedRobot {
       }
     }
 
-    if (!climbing) { //if climbing mode is not turned on
-      boostToggle(); //do normal speed based on boost
-    }
+    boostToggle();
+
 
 
     /*
@@ -350,6 +378,7 @@ public class Robot extends TimedRobot {
     }
 
 
+    
     /*
      * Roller Controls
      */
@@ -363,13 +392,6 @@ public class Robot extends TimedRobot {
       rollerMotor.set(0);
     }
 
-
-    /*
-     * Climber Mode
-     */
-    if (operatorGamepad.getAButtonPressed()) { //if A button is pressed
-      isClimbing(); //slows down speed
-    }
 
 
     /*
@@ -386,26 +408,26 @@ public class Robot extends TimedRobot {
     }
 
 
+
     /*
     * Algae Intake Movement Controls
     */
-    if (operatorGamepad.getYButtonPressed()) { //if Y button is pressed
-      algaeIntakeMovement(); //do algae intake function
-    }
+    // algaeIntakeMovement();
+
 
 
     /*
      * Algae Wheel Controls
      */
-    if (operatorGamepad.getRightTriggerAxis() >= 0.1) { //if the right trigger is pressed
-      algaeWheels.set(-ALGAE_WHEEL_STRENGTH); //push out algae
-    }
-    else if (operatorGamepad.getLeftTriggerAxis() >= 0.1) { //if left trigger is pressed
-      algaeWheels.set(ALGAE_WHEEL_STRENGTH); //suck in algae
-    }
-    else { //if nothing is pressed
-      algaeWheels.set(0); //stop wheels
-    }
+    // if (operatorGamepad.getRightTriggerAxis() >= 0.1) { //if the right trigger is pressed
+    //   algaeWheels.set(-ALGAE_WHEEL_STRENGTH); //push out algae
+    // }
+    // else if (operatorGamepad.getLeftTriggerAxis() >= 0.1) { //if left trigger is pressed
+    //   algaeWheels.set(ALGAE_WHEEL_STRENGTH); //suck in algae
+    // }
+    // else { //if nothing is pressed
+    //   algaeWheels.set(0); //stop wheels
+    // }
 
 
     /*
@@ -414,6 +436,7 @@ public class Robot extends TimedRobot {
     myDrive.arcadeDrive(driverGamepad.getRightX()*driveSpeed/1.25, driverGamepad.getLeftY()*driveSpeed*opposite);
     myDrive.feed();
   }
+
 
 
 //Called once when the robot is disabled
