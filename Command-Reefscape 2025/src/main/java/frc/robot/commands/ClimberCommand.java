@@ -1,5 +1,5 @@
 /*
-* Command controls climber actions
+* Climber commands
 */
 
 package frc.robot.commands;

@@ -1,3 +1,7 @@
+/*
+ * Climber subsystem
+ */
+
 package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkMax;
@@ -22,14 +26,14 @@ public class ClimberSubsystem extends SubsystemBase {
     }
 
     public void lowerClimber() {
-        climberMotor.set(Constants.climberConstants.CLIMBER_STRENGTH);
+        climberMotor.set(Constants.climber.CLIMBER_STRENGTH);
     }
 
     public void raiseClimber() {
-        climberMotor.set(-Constants.climberConstants.CLIMBER_STRENGTH);
+        climberMotor.set(-Constants.climber.CLIMBER_STRENGTH);
     }
 
     public void stopMotor() {
-        climberMotor.set(Constants.STOP_MOTOR);
+        climberMotor.set(Constants.drive.STOP_MOTOR);
     }
 }

@@ -1,5 +1,5 @@
 /*
-* Command controls all of robot's movement
+* Coral intake commands
 */
 
 package frc.robot.commands;

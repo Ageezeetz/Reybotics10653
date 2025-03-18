@@ -1,3 +1,7 @@
+/*
+ * Robot movement subsystem
+ */
+
 package frc.robot.subsystems;
 
 import com.revrobotics.RelativeEncoder;
@@ -57,7 +61,7 @@ public class DriveSubsystem extends SubsystemBase {
         driveConfig.disableFollowerMode();
         leftLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         rightLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-        // driveConfig.inverted(true); //not sure if this does anything after configuring the motors?
+        driveConfig.inverted(true); //not sure if this does anything after configuring the motors?
 
         //if robot overshoots or jitters near target, increase; if robot stops too far from target, decrease
         controller.setTolerance(0.75); //adds a little bit of error in case the robot doesn't fully reach setpoint
@@ -65,14 +69,19 @@ public class DriveSubsystem extends SubsystemBase {
 
     public void boostMode() {
         boostMode = !boostMode;
+        if (boostMode) {System.out.println("Boost mode enabled!");}
+        else {System.out.println("Boost mode disabled!");}
     }
 
     public void robotDirection() {
-        direction *= -1;  
+        direction *= -1;
+        if (direction == 1) {System.out.println("Roller is forward");}
+        else {System.out.println("Climber is forward");}
     }
 
     public void arcadeDrive(double forward, double rotation) {
-        double boostSpeedChange = boostMode ? Constants.driveConstants.BOOST_SPEED : Constants.driveConstants.NORMAL_SPEED;
+        double boostSpeedChange = boostMode ? Constants.drive.BOOST_SPEED : Constants.drive.NORMAL_SPEED;
+
         tankdrive.arcadeDrive(forward * boostSpeedChange * direction, rotation * boostSpeedChange / 1.25);
     }
 
@@ -113,7 +122,7 @@ public class DriveSubsystem extends SubsystemBase {
         }
         else if (step == 3) {
             startAutoTimer();
-            tankdrive.tankDrive(Constants.STOP_MOTOR, Constants.STOP_MOTOR);
+            tankdrive.tankDrive(Constants.drive.STOP_MOTOR, Constants.drive.STOP_MOTOR);
             coralSubsystem.dropCoral();
             if (getAutoTimer() > 1.5) {
                 step++;
@@ -123,7 +132,7 @@ public class DriveSubsystem extends SubsystemBase {
         }
         else {
             coralSubsystem.stopMotor();
-            tankdrive.tankDrive(Constants.STOP_MOTOR, Constants.STOP_MOTOR);
+            tankdrive.tankDrive(Constants.drive.STOP_MOTOR, Constants.drive.STOP_MOTOR);
         }
     }
 

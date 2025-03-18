@@ -1,3 +1,7 @@
+/*
+ * Coral intake subsytem
+ */
+
 package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkMax;
@@ -23,14 +27,14 @@ public class CoralSubsystem extends SubsystemBase {
     }
 
     public void dropCoral() {
-        rollerMotor.set(Constants.coralConstants.ROLLER_SPEED);
+        rollerMotor.set(Constants.coral.ROLLER_SPEED);
     }
 
     public void rollInCoral() {
-        rollerMotor.set(-Constants.coralConstants.ROLLER_SPEED);
+        rollerMotor.set(-Constants.coral.ROLLER_SPEED);
     }
 
     public void stopMotor() {
-        rollerMotor.set(Constants.STOP_MOTOR);
+        rollerMotor.set(Constants.drive.STOP_MOTOR);
     }
 }

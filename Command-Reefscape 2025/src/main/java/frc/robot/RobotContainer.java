@@ -1,3 +1,7 @@
+/*
+ * Main robot file
+ */
+
 package frc.robot;
 
 import edu.wpi.first.wpilibj.XboxController;

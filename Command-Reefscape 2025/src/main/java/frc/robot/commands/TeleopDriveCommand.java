@@ -1,5 +1,5 @@
 /*
- * Command controls all of robot's movement
+ * Robot movement commands
  */
 
 package frc.robot.commands;
