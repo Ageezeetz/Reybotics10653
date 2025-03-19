@@ -13,8 +13,8 @@ public class CoralIntakeCommand extends Command {
     private final XboxController controller;
 
 
-    public CoralIntakeCommand(CoralSubsystem roller, XboxController controller) { //uses the CoralSubsystem and an xbox controller
-        this.roller = roller; //constant
+    public CoralIntakeCommand(CoralSubsystem coralSubsystem, XboxController controller) { //uses the CoralSubsystem and an xbox controller
+        this.roller = coralSubsystem; //constant
         this.controller = controller; //constant
         addRequirements(roller); //prevents other commands from using subsystem given while this is running
     }
@@ -28,7 +28,9 @@ public class CoralIntakeCommand extends Command {
         else if (controllerPOV == 180) {
             roller.rollInCoral();
         }
-        roller.stopMotor();
+        else {
+            roller.stopMotor();
+        }
     }
 
     @Override

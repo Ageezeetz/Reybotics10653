@@ -1,5 +1,5 @@
 /*
- * Robot movement subsystem
+ * Robot Movement Subsystem
  */
 
 package frc.robot.subsystems;
@@ -32,13 +32,13 @@ public class DriveSubsystem extends SubsystemBase {
     public double rightEncoderPos = rightEncoder.getPosition();
 
     private boolean boostMode = false;
-    private int direction = 1;
+    private int direction = -1;
     public PIDController controller = new PIDController(0.02, 0, 0.005);
     public double step = 1; //used to determine which step of auto robot is on
 
     private final Timer autoTimer = new Timer();
 
-    private CoralSubsystem coralSubsystem = new CoralSubsystem();
+    private final CoralSubsystem coralSubsystem;
 
 
     public DriveSubsystem(CoralSubsystem coralSubsystem) {
@@ -61,7 +61,10 @@ public class DriveSubsystem extends SubsystemBase {
         driveConfig.disableFollowerMode();
         leftLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         rightLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-        driveConfig.inverted(true); //not sure if this does anything after configuring the motors?
+        // driveConfig.inverted(true); //not sure if this does anything after configuring the motors?
+
+        tankdrive.setSafetyEnabled(true);
+        tankdrive.setExpiration(0.5);    
 
         //if robot overshoots or jitters near target, increase; if robot stops too far from target, decrease
         controller.setTolerance(0.75); //adds a little bit of error in case the robot doesn't fully reach setpoint
@@ -82,7 +85,13 @@ public class DriveSubsystem extends SubsystemBase {
     public void arcadeDrive(double forward, double rotation) {
         double boostSpeedChange = boostMode ? Constants.drive.BOOST_SPEED : Constants.drive.NORMAL_SPEED;
 
-        tankdrive.arcadeDrive(forward * boostSpeedChange * direction, rotation * boostSpeedChange / 1.25);
+        tankdrive.arcadeDrive(rotation * boostSpeedChange / 1.25, forward * boostSpeedChange * direction);
+        tankdrive.feed();
+    }
+
+    public void tankDrive(double leftSpeed, double rightSpeed) {
+        tankdrive.tankDrive(leftSpeed, rightSpeed);
+
     }
 
     public void startAutoTimer() {
@@ -99,41 +108,7 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     public double getEncoderPositions() {
-        return (leftEncoderPos + rightEncoderPos) / 2;
-    }
-
-    public void straightCoralAuto(double distance) {
-        if (step == 1) {
-            startAutoTimer();
-            if (getAutoTimer() > 8) {
-                step++;
-                stopAutoTimer();
-            }
-        }
-        else if (step == 2) {
-            controller.setSetpoint(distance);
-            double output = controller.calculate(getEncoderPositions());
-            tankdrive.tankDrive(output, -output);
-            startAutoTimer();
-            if (controller.atSetpoint() || getAutoTimer() > 3) {
-                step++;
-                stopAutoTimer();
-            }
-        }
-        else if (step == 3) {
-            startAutoTimer();
-            tankdrive.tankDrive(Constants.drive.STOP_MOTOR, Constants.drive.STOP_MOTOR);
-            coralSubsystem.dropCoral();
-            if (getAutoTimer() > 1.5) {
-                step++;
-                coralSubsystem.stopMotor();
-                stopAutoTimer();
-            }
-        }
-        else {
-            coralSubsystem.stopMotor();
-            tankdrive.tankDrive(Constants.drive.STOP_MOTOR, Constants.drive.STOP_MOTOR);
-        }
+        return (leftEncoder.getPosition() + rightEncoder.getPosition()) / 2;
     }
 
     public void stop() {

@@ -23,7 +23,7 @@ public class TeleopDriveCommand extends Command {
     public void execute() { //called repeatedly every 20ms
         double forward = controller.getLeftY();
         double rotation = controller.getRightX();
-        drive.arcadeDrive(rotation, forward);
+        drive.arcadeDrive(forward, rotation);
     }
 
     @Override

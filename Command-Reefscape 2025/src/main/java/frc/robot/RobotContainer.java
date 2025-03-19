@@ -27,7 +27,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
  */
 public class RobotContainer {
   private final CoralSubsystem coralSubsystem = new CoralSubsystem(); //coral intake
-  private final DriveSubsystem driveSubsystem = new DriveSubsystem(coralSubsystem); //movement
+  private final DriveSubsystem driveSubsystem = new DriveSubsystem(coralSubsystem); //movement + auto
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem(); //climber
   private final XboxController driverController = new XboxController(Constants.DRIVER_CONTROLLER_PORT); //driver controller
   private final XboxController operatorController = new XboxController(Constants.OPERATOR_CONTROLLER_PORT); //operator controller
@@ -68,6 +68,6 @@ public class RobotContainer {
 
 
   public Command getAutonomousCommand() {
-    return Autos.straightCoralAuto(driveSubsystem, Constants.CENTER_AUTO_DISTANCE);
+    return Autos.straightCoralAuto(driveSubsystem, coralSubsystem, Constants.CENTER_AUTO_DISTANCE);
   }
 }
