@@ -21,13 +21,8 @@ public class AlgaeMovement extends Command {
         else if (controller.getRightY() < -0.1) {
             algaeSubsystem.algaeUp();
         }
-
-        if (controller.getRightTriggerAxis() > 0.1) {
-            algaeSubsystem.algaeOut();
-        }
-        else if (controller.getLeftTriggerAxis() > 0.1) {
-            algaeSubsystem.algaeIn();
+        else {
+            algaeSubsystem.stop();
         }
     }
-
 }

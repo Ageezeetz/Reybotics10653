@@ -14,12 +14,12 @@ public class CoralSubsystem extends SubsystemBase {
         rollerMotor = new SparkMax(9, MotorType.kBrushless);
     }
 
-    public void rollIn() {
-        rollerMotor.set(-ROLLER_SPEED);
-    }
-
     public void rollOut() {
         rollerMotor.set(ROLLER_SPEED);
+    }
+
+    public void rollIn() {
+        rollerMotor.set(-ROLLER_SPEED);
     }
 
     public void stop() {
