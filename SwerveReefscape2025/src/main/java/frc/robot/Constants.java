@@ -20,4 +20,8 @@ public final class Constants {
   public static class coral {
     public static final double ROLLER_SPEED = 0.25;
   }
+  public static class algae {
+    public static final double ALGAE_SPEED = 0.5;
+    public static final double ALGAE_WHEEL_SPEED = 0.25;
+  }
 }

@@ -57,12 +57,13 @@ public class DriveSubsystem extends SubsystemBase {
     backRight.setState(states[3]); //state 3 is back right wheel
   }
 
+
   public void stop() { //sets the speed and rotation to 0 for all modules
     drive(new SwerveModuleState[] {
-        new SwerveModuleState(0, new Rotation2d(0)),
-        new SwerveModuleState(0, new Rotation2d(0)),
-        new SwerveModuleState(0, new Rotation2d(0)),
-        new SwerveModuleState(0, new Rotation2d(0))
+        new SwerveModuleState(0, new Rotation2d(0)), //array index 0
+        new SwerveModuleState(0, new Rotation2d(0)), //index 1
+        new SwerveModuleState(0, new Rotation2d(0)), //index 2
+        new SwerveModuleState(0, new Rotation2d(0)) //index 3
     });
   }
 
@@ -75,12 +76,12 @@ public class DriveSubsystem extends SubsystemBase {
     SwerveModuleState[] states = kinematics.toSwerveModuleStates( //calculates how each wheel should move to achieve correct motion
       new ChassisSpeeds(xSpeed * MAX_SPEED, ySpeed * MAX_SPEED, rotationSpeed * MAX_ROTATION_SPEED) //overall motion from the robot
     );
-    //assigns "states" the value of speed and rotation, which is then applied to the modules
+    //states's value is now that of ChassisSpeeds, which includes forward, side, and rotation speeds, which is applied to the modules
 
     SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_SPEED); //ensures that all wheels don't exceed max speed
     //if one wheel is above max speed, all wheels slow down so that it is below or equal to max speed while still going the same direction
     
-    drive(states); //sends the new calculated speed values to the modules, changing their speed and rotation states
+    drive(states); //sends the new calculated speed values to the modules
   }
 
 

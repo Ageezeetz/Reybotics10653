@@ -17,7 +17,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 public class SwerveModule {
     private final SparkMax driveMotor;
-    private final SparkMax turnMotor;
+    private final SparkMax turnMotor; 
     private final RelativeEncoder driveEncoder;
     private final AbsoluteEncoder turnEncoder;
 
@@ -33,7 +33,7 @@ public class SwerveModule {
         // driveEncoder.setPositionConversionFactor(inchesPerTick);
     }
 
-    public SwerveModuleState getState() {
+    public SwerveModuleState getState() { //not used yet
         return new SwerveModuleState(driveEncoder.getVelocity(), new Rotation2d(turnEncoder.getPosition()));
     }
 
@@ -45,7 +45,7 @@ public class SwerveModule {
         return driveEncoder.getPosition();
     }
 
-    public void setState(SwerveModuleState state) { 
+    public void setState(SwerveModuleState state) { //used 
         driveMotor.set(state.speedMetersPerSecond / 5.0);
         turnMotor.set(state.angle.getRadians());
     }
