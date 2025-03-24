@@ -34,7 +34,7 @@ public class SwerveModule {
     }
 
     public SwerveModuleState getState() { //not used yet
-        return new SwerveModuleState(driveEncoder.getVelocity(), new Rotation2d(turnEncoder.getPosition()));
+        return new SwerveModuleState(driveEncoder.getVelocity(), new Rotation2d(Math.toRadians(turnEncoder.getPosition()))); //not sure if math to radians is needed
     }
 
     public void resetEncoder() { //used to reset driveMotor encoder

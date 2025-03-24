@@ -14,13 +14,21 @@ import static frc.robot.Constants.drivetrain.WHEEL_BASE;
 import static frc.robot.Constants.drivetrain.TRACK_WIDTH;
 import static frc.robot.Constants.drivetrain.MAX_SPEED;
 import static frc.robot.Constants.drivetrain.MAX_ROTATION_SPEED;
+import static frc.robot.Constants.drivetrain.SPARKMAX_ID_TOPRIGHT_DRIVE;
+import static frc.robot.Constants.drivetrain.SPARKMAX_ID_TOPLEFT_DRIVE;
+import static frc.robot.Constants.drivetrain.SPARKMAX_ID_BOTTOMRIGHT_DRIVE;
+import static frc.robot.Constants.drivetrain.SPARKMAX_ID_BOTTOMLEFT_DRIVE;
+import static frc.robot.Constants.drivetrain.SPARKMAX_ID_TOPRIGHT_TURN;
+import static frc.robot.Constants.drivetrain.SPARKMAX_ID_TOPLEFT_TURN;
+import static frc.robot.Constants.drivetrain.SPARKMAX_ID_BOTTOMRIGHT_TURN;
+import static frc.robot.Constants.drivetrain.SPARKMAX_ID_BOTTOMLEFT_TURN;
 
 public class DriveSubsystem extends SubsystemBase {
   //assigns sparkmaxes to specific modules as drive and turn motors (drive, turn)
-  private final SwerveModule frontRight = new SwerveModule(1, 5);
-  private final SwerveModule frontLeft = new SwerveModule(2, 6);
-  private final SwerveModule backRight = new SwerveModule(3, 7);
-  private final SwerveModule backLeft = new SwerveModule(4, 8);
+  private final SwerveModule frontRight = new SwerveModule(SPARKMAX_ID_TOPRIGHT_DRIVE, SPARKMAX_ID_TOPRIGHT_TURN);
+  private final SwerveModule frontLeft = new SwerveModule(SPARKMAX_ID_TOPLEFT_DRIVE, SPARKMAX_ID_TOPLEFT_TURN);
+  private final SwerveModule backRight = new SwerveModule(SPARKMAX_ID_BOTTOMRIGHT_DRIVE, SPARKMAX_ID_BOTTOMRIGHT_TURN);
+  private final SwerveModule backLeft = new SwerveModule(SPARKMAX_ID_BOTTOMLEFT_DRIVE, SPARKMAX_ID_BOTTOMLEFT_TURN);
 
   // private final AHRS gyro = new AHRS(SPI.Port.kMXP);
 
@@ -60,7 +68,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   public void stop() { //sets the speed and rotation to 0 for all modules
     drive(new SwerveModuleState[] {
-        new SwerveModuleState(0, new Rotation2d(0)), //array index 0
+        new SwerveModuleState(0, new Rotation2d(0)), //array index for the modules 0
         new SwerveModuleState(0, new Rotation2d(0)), //index 1
         new SwerveModuleState(0, new Rotation2d(0)), //index 2
         new SwerveModuleState(0, new Rotation2d(0)) //index 3
@@ -73,7 +81,10 @@ public class DriveSubsystem extends SubsystemBase {
     double ySpeed = controller.getLeftX();
     double rotationSpeed = controller.getRightX();
 
-    SwerveModuleState[] states = kinematics.toSwerveModuleStates( //calculates how each wheel should move to achieve correct motion
+      //calculates direction and robot speed from left joystick x and y
+      //calculates rotation with right joystick x
+      //calculates direction with direction from left x and y AND right x
+      SwerveModuleState[] states = kinematics.toSwerveModuleStates( //calculates how each wheel should move to achieve correct motion
       new ChassisSpeeds(xSpeed * MAX_SPEED, ySpeed * MAX_SPEED, rotationSpeed * MAX_ROTATION_SPEED) //overall motion from the robot
     );
     //states's value is now that of ChassisSpeeds, which includes forward, side, and rotation speeds, which is applied to the modules

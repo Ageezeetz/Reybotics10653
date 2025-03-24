@@ -9,6 +9,14 @@ public final class Constants {
     public static final double MAX_ROTATION_SPEED = 2.0;
     public static final double WHEEL_DIAMETER_INCHES = 3;
     public static final int GEAR_RATIO = 1;
+    public static final int SPARKMAX_ID_TOPRIGHT_DRIVE = 1;
+    public static final int SPARKMAX_ID_TOPLEFT_DRIVE = 2;
+    public static final int SPARKMAX_ID_BOTTOMRIGHT_DRIVE = 3;
+    public static final int SPARKMAX_ID_BOTTOMLEFT_DRIVE = 4;
+    public static final int SPARKMAX_ID_TOPRIGHT_TURN = 5;
+    public static final int SPARKMAX_ID_TOPLEFT_TURN = 6;
+    public static final int SPARKMAX_ID_BOTTOMRIGHT_TURN = 7;
+    public static final int SPARKMAX_ID_BOTTOMLEFT_TURN = 8;
 
   }
   public static class driver {
