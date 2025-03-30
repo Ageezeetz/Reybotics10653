@@ -9,8 +9,10 @@ import frc.robot.subsystems.DriveSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj.XboxController;
+
 import static frc.robot.Constants.driver.DRIVER_CONTROLLER_PORT;
 import static frc.robot.Constants.operator.OPERATOR_CONTROLLER_PORT;
+
 
 public class RobotContainer {
   private final CoralSubsystem coralSubsystem = new CoralSubsystem();
@@ -26,18 +28,18 @@ public class RobotContainer {
 
   private void configureBindings() {
     driveSubsystem.setDefaultCommand(
-      new RunCommand(() -> driveSubsystem.driveFromController(driverController), driveSubsystem)); //robot movement from driver controller
+      new RunCommand(() -> driveSubsystem.driveFromController(driverController), driveSubsystem)); //robot movement
 
     algaeSubsystem.setDefaultCommand(
-      new AlgaeMovement(algaeSubsystem, operatorController) //algae superstructure control for operator controller
+      new AlgaeMovement(algaeSubsystem, operatorController) //algae superstructure control (not wheel control)
     );
 
     coralSubsystem.setDefaultCommand(
-      new CoralMovement(coralSubsystem, operatorController) //wheel control for coral and algae
+      new CoralMovement(coralSubsystem, operatorController) //intake wheel control for coral and algae (strictly the wheel only)
     );
   }
 
   public Command getAutonomousCommand() {
-    return new StraightAuto(driveSubsystem, coralSubsystem, 10.0);
+    return new StraightAuto(driveSubsystem, coralSubsystem, 36.0); //should be able to travel 36 inches (3 feet)
   }
 }
