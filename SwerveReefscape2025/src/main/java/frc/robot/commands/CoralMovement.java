@@ -18,7 +18,7 @@ public class CoralMovement extends Command {
         if (controller.getPOV() == 0) {
             coralSubsystem.rollOut();
         }
-        else if (controller.getPort() == 180) {
+        else if (controller.getPOV() == 180) {
             coralSubsystem.rollIn();
         }
         else {

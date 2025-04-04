@@ -32,4 +32,7 @@ public final class Constants {
   public static class algae {
     public static final double ALGAE_SPEED = 0.5;
   }
+  public static class climber {
+    public static final double CLIMBER_SPEED = 0.75;
+  }
 }

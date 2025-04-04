@@ -29,9 +29,9 @@ public class StraightAuto extends Command {
     }
 
     public void initialize() {
+        swerveDrive.resetEncoders();
         waitTimer.reset();
         waitTimer.start();
-        swerveDrive.resetEncoders();
     }
 
     public void execute() {
@@ -83,12 +83,14 @@ public class StraightAuto extends Command {
         coralSubsystem.stop();
     }
 
-    public boolean isFinished() {
-        return step > 3;
-    }
+    // public boolean isFinished() {
+    //     return step > 3;
+    // }
 
     public void periodic() {
-        SmartDashboard.putNumber("PID Power Output", pidcontroller.calculate(swerveDrive.getAverageEncoderDistance()));
-        SmartDashboard.putBoolean("Robot at Target", pidcontroller.atSetpoint());
+        SmartDashboard.putNumber("PID Power Output", pidcontroller.calculate(swerveDrive.getAverageEncoderDistance())); //power output
+        SmartDashboard.putBoolean("Robot at Target", pidcontroller.atSetpoint()); //true/false, bot at dest
+        SmartDashboard.putNumber("Setpoint", pidcontroller.getSetpoint()); //destination in inches
+        SmartDashboard.putNumber("Distance from setpoint", pidcontroller.getSetpoint() - swerveDrive.getAverageEncoderDistance()); //distance from setpoint in inches
     }
 }
