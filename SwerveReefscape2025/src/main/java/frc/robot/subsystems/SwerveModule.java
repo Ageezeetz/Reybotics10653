@@ -14,6 +14,8 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 
@@ -29,6 +31,8 @@ public class SwerveModule {
     private final SparkMaxConfig turnMotorConfig = new SparkMaxConfig();
 
     private final double distanceInInches = ((Math.PI * WHEEL_DIAMETER_INCHES) / (VORTEX_TICKS_PER_REV * GEAR_RATIO));
+
+    private final PIDController pidcontroller = new PIDController(0.05, 0, 0.001);
 
 
     public SwerveModule(int driveMotorID, int turnMotorID) {
@@ -47,10 +51,13 @@ public class SwerveModule {
         turnMotorConfig.secondaryCurrentLimit(40);
         turnMotorConfig.voltageCompensation(12);
         turnMotor.configure(turnMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+        pidcontroller.setTolerance(0.1);
+        pidcontroller.enableContinuousInput(-Math.PI, Math.PI);
     }
 
     public SwerveModuleState getState() { //not used yet
-        return new SwerveModuleState(driveEncoder.getVelocity(), new Rotation2d(Math.toRadians(turnEncoder.getPosition()))); //not sure if math to radians is needed
+        return new SwerveModuleState(driveEncoder.getVelocity(), new Rotation2d(turnEncoder.getPosition()));
     }
 
     public void resetEncoder() { //used to reset driveMotor encoder
@@ -61,8 +68,41 @@ public class SwerveModule {
         return driveEncoder.getPosition() * distanceInInches;
     }
 
-    public void setState(SwerveModuleState state) { //used 
+    public double getAngle() { //returns angle for each wheel when asked
+        return turnEncoder.getPosition() * 2 * Math.PI;
+    }
+
+    public void setState(SwerveModuleState state) { //returns speedMetersPerSecond and angle
+        if (Math.abs(state.speedMetersPerSecond) < 0.001) {
+            stop();
+            return;
+        }
+        //sets desiredState to optimize turning for rotation
+        state.optimize(Rotation2d.fromDegrees(getAngle()));
+        //optimize inverts output to make turning quicker; if wheel degrees is 10, and wanted degrees from controller input is 190,
+        //the wheels will invert the direction of the wheels to go in that direction instead
+
+        //sets drive motor first
         driveMotor.set(state.speedMetersPerSecond / 5.0);
-        turnMotor.set(state.angle.getRadians());
+
+        //turns the SwerveModuleState from radians to degrees
+        double desiredAngle = Math.toDegrees(state.angle.getRadians()); //rotation2d initially gives values in radians, have to convert
+        //sets setpoint from contoller input, and current location to getAngle(), which gives current turnEncoder position
+        double output = pidcontroller.calculate(getAngle(), desiredAngle);
+
+        output = MathUtil.clamp(output, -0.5, 0.5); //makes sure that the speed is between abs 50%, no higher or lower (-) than that
+        
+        //sets turn motor
+        if (pidcontroller.atSetpoint()) {
+            turnMotor.set(0);
+        } 
+        else {
+            turnMotor.set(output);
+        }
+    }
+
+    public void stop() {
+        driveMotor.stopMotor();
+        turnMotor.stopMotor();
     }
 }

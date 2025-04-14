@@ -12,6 +12,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
 import static frc.robot.Constants.drivetrain;
 import static frc.robot.Constants.drivetrain.MAX_SPEED;
 import static frc.robot.Constants.drivetrain.MAX_ROTATION_SPEED;
@@ -25,6 +26,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   // private final AHRS gyro = new AHRS(SPI.Port.kMXP);
 
+  
 
   //creates a plane and plots locations of all four modules to calculate perfect turning based on their locations
   private final SwerveDriveKinematics kinematics = new SwerveDriveKinematics( //grid top left = +x, +y
@@ -33,6 +35,7 @@ public class DriveSubsystem extends SubsystemBase {
     new Translation2d(-drivetrain.WHEEL_BASE / 2, drivetrain.TRACK_WIDTH / 2), //back left
     new Translation2d(-drivetrain.WHEEL_BASE / 2, -drivetrain.TRACK_WIDTH / 2) //back right
   );
+
 
   public void resetEncoders() { //used for auto
     frontRight.resetEncoder();
@@ -52,8 +55,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   public void drive(SwerveModuleState[] states) {
     //setState sets the correct speed and angle based on the calculations below
-    frontLeft.setState(states[0]); //state 0 is front left wheel
-    frontRight.setState(states[1]); //state 1 is front right wheel
+    frontRight.setState(states[0]); //state 1 is front right wheel
+    frontLeft.setState(states[1]); //state 0 is front left wheel
     backLeft.setState(states[2]); //state 2 is back left wheel
     backRight.setState(states[3]); //state 3 is back right wheel
 
@@ -72,16 +75,25 @@ public class DriveSubsystem extends SubsystemBase {
 
 
   public void driveFromController(XboxController controller) {
-    double xSpeed = -controller.getLeftY();
-    double ySpeed = controller.getLeftX();
-    double rotationSpeed = controller.getRightX();
+    double xSpeed = 0;
+    double ySpeed = 0;
+    double rotationSpeed = 0;
+    if (Math.abs(-controller.getLeftY()) > 0.1) {
+      xSpeed = -controller.getLeftY();
+    }
+    if (Math.abs(controller.getLeftX()) > 0.1) {
+      ySpeed = controller.getLeftX();
+    }
+    if (Math.abs(controller.getRightX()) > 0.1) {
+      rotationSpeed = controller.getRightX();
+    }
 
       //calculates speed and rotation based on the left y (speed), left x (side2side movement), and right x (rotation)
       //and limits it to the percentage from MAX_SPEED and MAX_ROTATION_SPEED
       SwerveModuleState[] states = kinematics.toSwerveModuleStates(
       new ChassisSpeeds(xSpeed * MAX_SPEED, ySpeed * MAX_SPEED, rotationSpeed * MAX_ROTATION_SPEED)
       //applies the calculations and formats them to be used in x and y instead of x, y, and z
-    );
+      );
     //module state values are now that of ChassisSpeeds, which includes forward, side, and rotation speeds, all turned into speed and rotation
 
     SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_SPEED); //ensures that all wheels don't exceed max speed
@@ -94,9 +106,19 @@ public class DriveSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Left Side Encoder Positions", (frontLeft.getPosition() + backLeft.getPosition()) / 2);
-    SmartDashboard.putNumber("Right Side Encoder Positions", (frontRight.getPosition() + backRight.getPosition()) / 2);
-    SmartDashboard.putNumber("Average Encoder Positions", getAverageEncoderDistance());
+    SmartDashboard.putNumber("FR °", frontRight.getAngle());
+    SmartDashboard.putNumber("FL °", frontLeft.getAngle());
+    SmartDashboard.putNumber("BL °", backLeft.getAngle());
+    SmartDashboard.putNumber("BR °", backRight.getAngle());
+
+    SmartDashboard.putNumber("FR m/s", frontRight.getState().speedMetersPerSecond / 5);
+    SmartDashboard.putNumber("FL m/s", frontLeft.getState().speedMetersPerSecond / 5);
+    SmartDashboard.putNumber("BL m/s", backLeft.getState().speedMetersPerSecond / 5);
+    SmartDashboard.putNumber("BR m/s", backRight.getState().speedMetersPerSecond / 5);
+
+    SmartDashboard.putString("FL Module", String.format("Angle: %.2f°, Target: %.2f°",
+    frontLeft.getAngle(),
+    frontLeft.getState().angle.getDegrees()));
   }
 
 
