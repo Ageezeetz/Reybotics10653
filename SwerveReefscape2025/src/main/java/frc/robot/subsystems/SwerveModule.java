@@ -32,7 +32,7 @@ public class SwerveModule {
 
     private final double distanceInInches = ((Math.PI * WHEEL_DIAMETER_INCHES) / (VORTEX_TICKS_PER_REV * GEAR_RATIO));
 
-    private final PIDController pidcontroller = new PIDController(0.05, 0, 0.001);
+    private final PIDController pidcontroller = new PIDController(0.07, 0, 0.002);
 
 
     public SwerveModule(int driveMotorID, int turnMotorID) {
@@ -65,7 +65,7 @@ public class SwerveModule {
     }
 
     public double getPosition() { //used for autonomous; turns encoder position into inches instead of ticks
-        return driveEncoder.getPosition() * distanceInInches;
+        return driveEncoder.getPosition();// * distanceInInches;
     }
 
     public double getAngle() { //returns angle for each wheel when asked
@@ -78,7 +78,7 @@ public class SwerveModule {
             return;
         }
         //sets desiredState to optimize turning for rotation
-        state.optimize(Rotation2d.fromDegrees(getAngle()));
+        state.optimize(new Rotation2d(getAngle())); // state = state.optimize(new Rotation2d(getAngle()));
         //optimize inverts output to make turning quicker; if wheel degrees is 10, and wanted degrees from controller input is 190,
         //the wheels will invert the direction of the wheels to go in that direction instead
 
@@ -86,7 +86,7 @@ public class SwerveModule {
         driveMotor.set(state.speedMetersPerSecond / 5.0);
 
         //turns the SwerveModuleState from radians to degrees
-        double desiredAngle = Math.toDegrees(state.angle.getRadians()); //rotation2d initially gives values in radians, have to convert
+        double desiredAngle = state.angle.getRadians(); //rotation2d initially gives values in radians, have to convert
         //sets setpoint from contoller input, and current location to getAngle(), which gives current turnEncoder position
         double output = pidcontroller.calculate(getAngle(), desiredAngle);
 

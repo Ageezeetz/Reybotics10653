@@ -1,5 +1,7 @@
 package frc.robot;
 
+import edu.wpi.first.math.util.Units;
+
 public final class Constants {
 
   public static class drivetrain {
@@ -7,9 +9,9 @@ public final class Constants {
     public static final double WHEEL_BASE = 28 * 0.0254; //distance from center of front and back modules from inches to meters
     public static final double MAX_SPEED = 1.0; //meters per second
     public static final double MAX_ROTATION_SPEED = 0.1;
-    public static final double WHEEL_DIAMETER_INCHES = 1 / 3;
+    public static final double WHEEL_DIAMETER_INCHES = Units.inchesToMeters(3);
     public static final double VORTEX_TICKS_PER_REV = 3;
-    public static final double GEAR_RATIO = 1 / 5.08; //may be wrong, only used for drive encoders
+    public static final double GEAR_RATIO = 1 / 5.08; //drive
 
     public static final int SPARKMAX_ID_TOPRIGHT_DRIVE = 1;
     public static final int SPARKMAX_ID_TOPLEFT_DRIVE = 2;

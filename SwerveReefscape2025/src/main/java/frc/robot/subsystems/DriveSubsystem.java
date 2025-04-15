@@ -8,7 +8,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-// import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -24,9 +24,7 @@ public class DriveSubsystem extends SubsystemBase {
   private final SwerveModule backRight = new SwerveModule(drivetrain.SPARKMAX_ID_BOTTOMRIGHT_DRIVE, drivetrain.SPARKMAX_ID_BOTTOMRIGHT_TURN);
   private final SwerveModule backLeft = new SwerveModule(drivetrain.SPARKMAX_ID_BOTTOMLEFT_DRIVE, drivetrain.SPARKMAX_ID_BOTTOMLEFT_TURN);
 
-  // private final AHRS gyro = new AHRS(SPI.Port.kMXP);
-
-  
+//  private final AHRS gyro = new AHRS(SPI.Port.kMXP);
 
   //creates a plane and plots locations of all four modules to calculate perfect turning based on their locations
   private final SwerveDriveKinematics kinematics = new SwerveDriveKinematics( //grid top left = +x, +y
@@ -75,18 +73,12 @@ public class DriveSubsystem extends SubsystemBase {
 
 
   public void driveFromController(XboxController controller) {
-    double xSpeed = 0;
-    double ySpeed = 0;
-    double rotationSpeed = 0;
-    if (Math.abs(-controller.getLeftY()) > 0.1) {
-      xSpeed = -controller.getLeftY();
-    }
-    if (Math.abs(controller.getLeftX()) > 0.1) {
-      ySpeed = controller.getLeftX();
-    }
-    if (Math.abs(controller.getRightX()) > 0.1) {
-      rotationSpeed = controller.getRightX();
-    }
+    double xSpeed = -controller.getLeftY();
+    double ySpeed = controller.getLeftX();
+    double rotationSpeed = controller.getRightX();
+    xSpeed = Math.abs(xSpeed) > 0.1 ? xSpeed : 0.0;
+    ySpeed = Math.abs(ySpeed) > 0.1 ? ySpeed : 0.0;
+    rotationSpeed = Math.abs(rotationSpeed) > 0.1 ? rotationSpeed : 0.0;
 
       //calculates speed and rotation based on the left y (speed), left x (side2side movement), and right x (rotation)
       //and limits it to the percentage from MAX_SPEED and MAX_ROTATION_SPEED
