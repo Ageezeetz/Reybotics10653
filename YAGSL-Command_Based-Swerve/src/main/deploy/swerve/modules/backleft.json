@@ -3,21 +3,21 @@
     "front": -14,
     "left": 11.5
   },
-  "absoluteEncoderOffset": 0.1472117,
+  "absoluteEncoderOffset": 53.36,
   "drive": {
     "type": "sparkflex_vortex",
     "id": 3,
-    "canbus": "rio"
+    "canbus": null
   },
   "angle": {
     "type": "sparkmax_neo550",
     "id": 7,
-    "canbus": "rio"
+    "canbus": null
   },
   "encoder": {
     "type": "throughbore",
     "id": 7,
-    "canbus": "rio"
+    "canbus": null
   },
   "inverted": {
     "drive": false,

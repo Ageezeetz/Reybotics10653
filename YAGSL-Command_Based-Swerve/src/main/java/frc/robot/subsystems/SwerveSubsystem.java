@@ -7,6 +7,12 @@ import frc.robot.Constants;
 import java.io.File;
 import java.util.function.Supplier;
 
+// import com.revrobotics.spark.SparkLowLevel.MotorType;
+// import com.revrobotics.spark.config.SparkMaxConfig;
+// import com.revrobotics.spark.SparkMax;
+// import com.revrobotics.spark.SparkBase.PersistMode;
+// import com.revrobotics.spark.SparkBase.ResetMode;
+
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import swervelib.parser.SwerveParser;
@@ -22,15 +28,27 @@ public class SwerveSubsystem extends SubsystemBase {
   File swerveDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
   SwerveDrive swerveDrive;
 
+  // private final SparkMax climber = new SparkMax(9, MotorType.kBrushless);
+  // private final SparkMax algaeMovement = new SparkMax(10, MotorType.kBrushless);
+  // private final SparkMax intakeWheels = new SparkMax(11, MotorType.kBrushless);
+
+  // private final SparkMaxConfig config = new SparkMaxConfig();
+
+
+
   public SwerveSubsystem() {
+    // config.smartCurrentLimit(40);
+    // config.voltageCompensation(12);
+    // climber.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    // algaeMovement.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    // intakeWheels.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    
         try
     {
       swerveDrive = new SwerveParser(swerveDirectory).createSwerveDrive(Constants.MAX_SPEED, 
                                                                         new Pose2d(new Translation2d(Meter.of(0), 
                                                                                                      Meter.of(2)),
                                                                                   Rotation2d.fromDegrees(0)));
-      //alternative method if you don't want to supply the conversion factor via JSON files.
-      // swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, angleConversionFactor, driveConversionFactor);
     }
     catch (Exception e)
     {
@@ -43,7 +61,7 @@ public class SwerveSubsystem extends SubsystemBase {
     //                                            0.1); //Correct for skew that gets worse as angular velocity increases. Start with a coefficient of 0.1.
     // swerveDrive.setModuleEncoderAutoSynchronize(false,
     //                                             1); // Enable if you want to resynchronize your absolute encoders and motor encoders periodically when they are not moving.
-    // //deprecated swerveDrive.pushOffsetsToEncoders(); // Set the absolute encoder to be used over the internal encoder and push the offsets onto it. Throws warning if not possible
+    //deprecated swerveDrive.pushOffsetsToEncoders(); // Set the absolute encoder to be used over the internal encoder and push the offsets onto it. Throws warning if not possible
 
   }
 
