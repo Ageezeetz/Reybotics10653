@@ -34,9 +34,10 @@ public class RobotContainer {
   SwerveInputStream driveAngularVelocity = SwerveInputStream.of(drivebase.getSwerveDrive(),
                                                                 () -> m_driverController.getLeftY(), //gets controller left y input
                                                                 () -> m_driverController.getLeftX()) //gets controller left x input
-                                                                .withControllerRotationAxis(() -> m_driverController.getRightX())
+                                                                .withControllerRotationAxis(() -> m_driverController.getRightX() * -1)
                                                                 .deadband(OperatorConstants.DEADBAND) //applies deadband
-                                                                .scaleTranslation(0.8)
+                                                                .scaleTranslation(0.7)
+                                                                .scaleRotation(0.5)
                                                                 .allianceRelativeControl(true);
                                                                 //depending on which alliance the bot is on is the direction the bot will move by default
 
