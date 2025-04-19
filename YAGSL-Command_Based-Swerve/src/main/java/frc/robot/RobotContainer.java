@@ -6,6 +6,7 @@ import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import swervelib.SwerveInputStream;
+import swervelib.telemetry.SwerveDriveTelemetry;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -21,6 +22,10 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
+
+    drivebase.zeroGyro();
+
     configureBindings();
     drivebase.setDefaultCommand(driveFieldOrientedAngularVelocity); //makes sure it's always reading controller input and changing robot speeds
   }
@@ -28,7 +33,7 @@ public class RobotContainer {
   //calculates speed for robot depending on left joystick inputs and rotation values while scaling it down and applying alliance relativity
   SwerveInputStream driveAngularVelocity = SwerveInputStream.of(drivebase.getSwerveDrive(),
                                                                 () -> m_driverController.getLeftY(), //gets controller left y input
-                                                                () -> m_driverController.getLeftX() * -1) //gets controller left x input
+                                                                () -> m_driverController.getLeftX()) //gets controller left x input
                                                                 .withControllerRotationAxis(() -> m_driverController.getRightX())
                                                                 .deadband(OperatorConstants.DEADBAND) //applies deadband
                                                                 .scaleTranslation(0.8)

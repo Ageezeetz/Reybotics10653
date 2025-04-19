@@ -7,6 +7,8 @@ import frc.robot.Constants;
 import java.io.File;
 import java.util.function.Supplier;
 
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+
 // import com.revrobotics.spark.SparkLowLevel.MotorType;
 // import com.revrobotics.spark.config.SparkMaxConfig;
 // import com.revrobotics.spark.SparkMax;
@@ -27,6 +29,8 @@ import static edu.wpi.first.units.Units.Meter;
 public class SwerveSubsystem extends SubsystemBase {
   File swerveDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
   SwerveDrive swerveDrive;
+
+  private final Field2d field = new Field2d();
 
   // private final SparkMax climber = new SparkMax(9, MotorType.kBrushless);
   // private final SparkMax algaeMovement = new SparkMax(10, MotorType.kBrushless);
@@ -56,21 +60,26 @@ public class SwerveSubsystem extends SubsystemBase {
     }
     // swerveDrive.setHeadingCorrection(false); //heading correction should only be used while controlling the robot via angle
     // swerveDrive.setCosineCompensator(false); //disables cosine compensation for simulations since it causes discrepancies not seen in real life
-    // swerveDrive.setAngularVelocityCompensation(true,
-    //                                            true,
-    //                                            0.1); //Correct for skew that gets worse as angular velocity increases. Start with a coefficient of 0.1.
-    // swerveDrive.setModuleEncoderAutoSynchronize(false,
-    //                                             1); // Enable if you want to resynchronize your absolute encoders and motor encoders periodically when they are not moving.
-    //deprecated swerveDrive.pushOffsetsToEncoders(); // Set the absolute encoder to be used over the internal encoder and push the offsets onto it. Throws warning if not possible
-
+    swerveDrive.setAngularVelocityCompensation(true,
+                                               true,
+                                               0.1); //Correct for skew that gets worse as angular velocity increases. Start with a coefficient of 0.1.
+    swerveDrive.setModuleEncoderAutoSynchronize(false,
+                                                1); // Enable if you want to resynchronize your absolute encoders and motor encoders periodically when they are not moving.
   }
 
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Drive Encoder Values", swerveDrive.getFieldVelocity().vxMetersPerSecond);
-    SmartDashboard.putNumber("Angle Encoder Value", swerveDrive.getMaximumChassisAngularVelocity());
-    // SmartDashboard.putNumber("Absolute Encoder Value", swerveDrive.get);
+    swerveDrive.updateOdometry(); //updates the robot's position and angle on the field
+
+    field.setRobotPose(swerveDrive.getPose()); //updates robot's position on sim
+    SmartDashboard.putData("Field", field); //sends to dashboard
+
+    // SmartDashboard.putNumber("Robot X Position", swerveDrive.getPose().getX());
+    // SmartDashboard.putNumber("Robot Y Position", swerveDrive.getPose().getY());
+    // SmartDashboard.putNumber("Robot Heading", swerveDrive.getPose().getRotation().getDegrees());
+    // SmartDashboard.putNumber("Drive Encoder Values", swerveDrive.getFieldVelocity().vxMetersPerSecond);
+    // SmartDashboard.putNumber("Angle Encoder Value", swerveDrive.getMaximumChassisAngularVelocity()); 
   }
 
   public SwerveDrive getSwerveDrive() {
@@ -85,5 +94,9 @@ public class SwerveSubsystem extends SubsystemBase {
     return run(() -> {
       swerveDrive.driveFieldOriented(velocity.get());
     });
+  }
+
+  public void zeroGyro() {
+    swerveDrive.zeroGyro();
   }
 }
