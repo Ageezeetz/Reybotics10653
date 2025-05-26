@@ -2,27 +2,21 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
 
 import java.io.File;
 import java.util.function.Supplier;
 
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-
-// import com.revrobotics.spark.SparkLowLevel.MotorType;
-// import com.revrobotics.spark.config.SparkMaxConfig;
-// import com.revrobotics.spark.SparkMax;
-// import com.revrobotics.spark.SparkBase.PersistMode;
-// import com.revrobotics.spark.SparkBase.ResetMode;
+// import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import swervelib.parser.SwerveParser;
 import swervelib.SwerveDrive;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import frc.robot.Constants.swerve;
 
 import static edu.wpi.first.units.Units.Meter;
 
@@ -30,26 +24,14 @@ public class SwerveSubsystem extends SubsystemBase {
   File swerveDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
   SwerveDrive swerveDrive;
 
-  private final Field2d field = new Field2d();
-
-  // private final SparkMax climber = new SparkMax(9, MotorType.kBrushless);
-  // private final SparkMax algaeMovement = new SparkMax(10, MotorType.kBrushless);
-  // private final SparkMax intakeWheels = new SparkMax(11, MotorType.kBrushless);
-
-  // private final SparkMaxConfig config = new SparkMaxConfig();
+  // private final Field2d field = new Field2d();
 
 
 
   public SwerveSubsystem() {
-    // config.smartCurrentLimit(40);
-    // config.voltageCompensation(12);
-    // climber.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    // algaeMovement.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    // intakeWheels.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    
-        try
+    try
     {
-      swerveDrive = new SwerveParser(swerveDirectory).createSwerveDrive(Constants.MAX_SPEED, 
+      swerveDrive = new SwerveParser(swerveDirectory).createSwerveDrive(swerve.MAX_SPEED, 
                                                                         new Pose2d(new Translation2d(Meter.of(0), 
                                                                                                      Meter.of(2)),
                                                                                   Rotation2d.fromDegrees(0)));
@@ -70,10 +52,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    swerveDrive.updateOdometry(); //updates the robot's position and angle on the field
+    // swerveDrive.updateOdometry(); //updates the robot's position and angle on the field
 
-    field.setRobotPose(swerveDrive.getPose()); //updates robot's position on sim
-    SmartDashboard.putData("Field", field); //sends to dashboard
+    // field.setRobotPose(swerveDrive.getPose()); //updates robot's position on sim
+    // SmartDashboard.putData("Field", field); //sends to dashboard
 
     // SmartDashboard.putNumber("Robot X Position", swerveDrive.getPose().getX());
     // SmartDashboard.putNumber("Robot Y Position", swerveDrive.getPose().getY());
