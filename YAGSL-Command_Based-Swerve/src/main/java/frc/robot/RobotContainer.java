@@ -36,8 +36,8 @@ public class RobotContainer {
                                                                 () -> driverController.getLeftX()) //gets controller left x input
                                                                 .withControllerRotationAxis(() -> driverController.getRightX() * -1)
                                                                 .deadband(controllers.DEADBAND) //applies deadband
-                                                                .scaleTranslation(0.5)
-                                                                .scaleRotation(0.45)
+                                                                .scaleTranslation(0.3)
+                                                                .scaleRotation(0.2)
                                                                 .allianceRelativeControl(true);
                                                                 //depending on which alliance the bot is on is the direction the bot will move by default
 
@@ -52,6 +52,7 @@ public class RobotContainer {
 
 
   private void configureBindings() {
+    armSubsystem.setDefaultCommand(new armCommand(armSubsystem, driverController)); //command for arm
     intakeSubsystem.setDefaultCommand(new IntakeCommand(intakeSubsystem, driverController)); //command for coral intake
     climberSubsystem.setDefaultCommand(new ClimberCommand(climberSubsystem, driverController)); //command for climber
     drivebase.setDefaultCommand(driveFieldOrientedAngularVelocity); //makes sure it's always reading controller input and changing robot speeds
