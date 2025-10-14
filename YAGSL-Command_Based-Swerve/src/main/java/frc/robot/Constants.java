@@ -28,6 +28,4 @@ public final class Constants {
     public static final double ARM_STRENGTH = 0.75;
     public static final double STOP_MOTOR = 0;
   }
-
-  }
 }

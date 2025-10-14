@@ -1,7 +1,7 @@
 /*
  * arm subsystem
  */
-
+/*
  package frc.robot.subsystems;
 
  import com.revrobotics.spark.SparkMax;
@@ -38,3 +38,4 @@
          armMotor.set(arm.STOP_MOTOR);
      }
  }
+     */

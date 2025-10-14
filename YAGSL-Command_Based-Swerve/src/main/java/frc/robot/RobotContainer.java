@@ -5,10 +5,12 @@ import frc.robot.commands.Autos;
 import frc.robot.commands.ClimberCommand;
 import frc.robot.commands.ExampleCommand;
 import frc.robot.commands.IntakeCommand;
+import frc.robot.subsystems.ArmSubsystem2;
 import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.subsystems.ArmSubsystem2;
 import swervelib.SwerveInputStream;
 // import swervelib.telemetry.SwerveDriveTelemetry;
 import edu.wpi.first.wpilibj.XboxController;
@@ -17,7 +19,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 public class RobotContainer {
   private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem(); //coral intake
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem(); //climber
-  private final XboxController driverController = new XboxController(controllers.driverPort); //driver controller
+  public final ArmSubsystem2 armSubsystem2 = new ArmSubsystem2(); //climber
+  public final XboxController driverController = new XboxController(controllers.driverPort); //driver controller
   private final XboxController operatorController = new XboxController(controllers.operatorPort); //operator controller
   
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
@@ -52,7 +55,7 @@ public class RobotContainer {
 
 
   private void configureBindings() {
-    armSubsystem.setDefaultCommand(new armCommand(armSubsystem, driverController)); //command for arm
+  //  armSubsystem.setDefaultCommand(new armCommand(armSubsystem, driverController)); //command for arm
     intakeSubsystem.setDefaultCommand(new IntakeCommand(intakeSubsystem, driverController)); //command for coral intake
     climberSubsystem.setDefaultCommand(new ClimberCommand(climberSubsystem, driverController)); //command for climber
     drivebase.setDefaultCommand(driveFieldOrientedAngularVelocity); //makes sure it's always reading controller input and changing robot speeds

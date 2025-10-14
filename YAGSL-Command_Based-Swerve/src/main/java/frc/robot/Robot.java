@@ -79,7 +79,11 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    m_robotContainer.armSubsystem2.setSpeed(
+      m_robotContainer.driverController.getRightBumper(), 
+      m_robotContainer.driverController.getLeftBumper());
+  }
 
   @Override
   public void testInit() {
