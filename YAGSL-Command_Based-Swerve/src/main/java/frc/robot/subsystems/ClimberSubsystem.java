@@ -9,7 +9,7 @@
  import com.revrobotics.spark.SparkLowLevel.MotorType;
  import com.revrobotics.spark.SparkBase.PersistMode;
  import com.revrobotics.spark.SparkBase.ResetMode;
- 
+
  import edu.wpi.first.wpilibj2.command.SubsystemBase;
  import frc.robot.Constants.climber;
  
@@ -26,11 +26,11 @@
      }
  
      public void lowerClimber() {
-         climberMotor.set(climber.CLIMBER_STRENGTH); //climber should go out of the robot
+         climberMotor.set(climber.CLIMBER_STRENGTH); //climber gets lowered AWAY from robot
      }
  
      public void raiseClimber() {
-         climberMotor.set(-climber.CLIMBER_STRENGTH); //climber should go into the robot
+         climberMotor.set(-climber.CLIMBER_STRENGTH); //climber gets raised INTO robot
      }
  
      public void stop() {

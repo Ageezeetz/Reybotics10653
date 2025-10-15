@@ -17,10 +17,10 @@ public class IntakeCommand extends Command {
 
     @Override
     public void execute() { //called repeatedly every 20ms
-        if (controller.getPOV() == 0) {
+        if (controller.getPOV() == 0) { //if controller top D-Pad is pressed, wheels roll out
             roller.rollOut();
         }
-        else if (controller.getPOV() == 180) {
+        else if (controller.getPOV() == 180) { //if controller bottom D-Pad is pressed, wheels roll in
             roller.rollIn();
         }
         else {

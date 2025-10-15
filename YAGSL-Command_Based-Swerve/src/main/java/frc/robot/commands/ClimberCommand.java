@@ -17,13 +17,13 @@ public class ClimberCommand extends Command {
 
     @Override
     public void execute() { //called repeatedly every 20ms
-        boolean controllerY = controller.getYButton();
-        boolean controllerA = controller.getAButton();
-        if (controllerY == true) {
-            climber.lowerClimber();
+        double controllerRightTrig = controller.getRightTriggerAxis();
+        double controllerLeftTrig = controller.getLeftTriggerAxis();
+        if (controllerRightTrig > 0.02) { //if controller right trigger is pressed
+            climber.lowerClimber(); //lower climber
         }
-        else if (controllerA == true) {
-            climber.raiseClimber();
+        else if (controllerLeftTrig > 0.02) { //if controller left trigger is pressed
+            climber.raiseClimber(); //raise climber
         }
         else {
             climber.stop();

@@ -24,11 +24,11 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public void rollOut() {
-        rollerMotor.set(intake.ROLLER_SPEED);
+        rollerMotor.set(intake.ROLLER_SPEED); //intake wheels roll outward
     }
 
     public void rollIn() {
-        rollerMotor.set(-intake.ROLLER_SPEED);
+        rollerMotor.set(-intake.ROLLER_SPEED); //intake wheels roll inward
     }
 
     public void stop() {
