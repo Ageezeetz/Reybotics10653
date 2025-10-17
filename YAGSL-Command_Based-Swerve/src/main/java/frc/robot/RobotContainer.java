@@ -55,8 +55,8 @@ public class RobotContainer {
 
   private void configureBindings() {
   //  armSubsystem.setDefaultCommand(new armCommand(armSubsystem, driverController)); //command for arm
-    intakeSubsystem.setDefaultCommand(new IntakeCommand(intakeSubsystem, driverController)); //command for coral intake
-    climberSubsystem.setDefaultCommand(new ClimberCommand(climberSubsystem, driverController)); //command for climber
+    intakeSubsystem.setDefaultCommand(new IntakeCommand(intakeSubsystem, operatorController)); //command for coral intake
+    climberSubsystem.setDefaultCommand(new ClimberCommand(climberSubsystem, operatorController)); //command for climber
     drivebase.setDefaultCommand(driveFieldOrientedAngularVelocity); //makes sure it's always reading controller input and changing robot speeds
   }
 

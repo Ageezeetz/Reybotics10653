@@ -5,7 +5,7 @@ import edu.wpi.first.math.util.Units;
 
 public final class Constants {
   public static class swerve {
-    public static final double MAX_SPEED = Units.feetToMeters(10);
+    public static final double MAX_SPEED = Units.feetToMeters(15);
   }
 
   public static class controllers {
@@ -15,7 +15,7 @@ public final class Constants {
   }
 
   public static class intake {
-    public static final double ROLLER_SPEED = 0.5;
+    public static final double ROLLER_SPEED = -0.5;
     public static final double STOP_MOTOR = 0;
   }
 
