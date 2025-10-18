@@ -7,6 +7,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.commands.AutoDriveForward;
 import frc.robot.subsystems.ArmSubsystem;
 
 /**
@@ -55,11 +56,17 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
-    // schedule the autonomous command (example)
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
+    // // schedule the autonomous command (example)
+    // if (m_autonomousCommand != null) {
+    //   m_autonomousCommand.schedule();
+    // }
+
+    AutoDriveForward driveForward = new AutoDriveForward(m_robotContainer.drivebase); //creates the new command
+
+    if (driveForward != null) {
+        driveForward.schedule(); //schedules command to run when autonomous starts, running the full command (init, execute, and end)
     }
   }
 
@@ -82,11 +89,11 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     m_robotContainer.armSubsystem.setSpeed(
-      m_robotContainer.operatorController.getAButton(), 
-      m_robotContainer.operatorController.getYButton() //raises arm
-      ); //lowers arm
+      m_robotContainer.operatorController.getAButton(), //raises arm
+      m_robotContainer.operatorController.getYButton() //lowers arm
+      ); 
 
-      System.out.println(m_robotContainer.armSubsystem.armMotor.getEncoder().getPosition());
+      //System.out.println(m_robotContainer.armSubsystem.armMotor.getEncoder().getPosition());
   }
 
   @Override

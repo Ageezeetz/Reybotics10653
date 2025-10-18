@@ -23,7 +23,7 @@ public class RobotContainer {
   public final XboxController operatorController = new XboxController(controllers.operatorPort); //operator controller
   
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
-  private final SwerveSubsystem drivebase = new SwerveSubsystem();
+  public final SwerveSubsystem drivebase = new SwerveSubsystem();
 
   public RobotContainer() {
     // SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
